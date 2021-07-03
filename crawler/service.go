@@ -2,7 +2,7 @@
 package crawler
 
 import (
-	crawler "eth2-crawler/crawler/eth2-crawler"
+	"eth2-crawler/crawler/crawl"
 
 	"github.com/ethereum/go-ethereum/log"
 
@@ -19,6 +19,6 @@ func Start() {
 	)
 	log.Root().SetHandler(handler)
 
-	err := crawler.Initialize(params.V5Bootnodes)
+	err := crawl.Initialize(params.V5Bootnodes)
 	panic(err)
 }
