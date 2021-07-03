@@ -103,9 +103,6 @@ linters-settings:
     disable:
       - shadow
     disable-all: false
-  revive:
-    # minimal confidence for issues, default is 0.8
-    min-confidence: 0.8
   gofmt:
     # simplify code: gofmt with `-s` option, true by default
     simplify: false
