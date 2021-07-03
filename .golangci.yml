@@ -239,7 +239,6 @@ linters:
     - godox
     - gofmt
     - goimports
-    - revive
     - gosec
     - gosimple
     - govet
