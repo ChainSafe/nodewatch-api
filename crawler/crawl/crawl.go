@@ -57,7 +57,9 @@ func (c *crawler) runIterator(ctx context.Context, doneCh chan enode.Iterator, i
 
 func (c *crawler) collectNodeInfo(node *enode.Node) {
 	// TODO check db. if node already exists update node. else insert as new node
-	log.Info("found a node")
+	log.Info("found a node", log.Ctx{
+		"node": node,
+	})
 	// Request the node record to check if the node is active and update the status accordingly.
 	nn, err := c.disc.RequestENR(node)
 	if err != nil {
