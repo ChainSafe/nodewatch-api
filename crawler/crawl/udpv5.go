@@ -49,7 +49,7 @@ func getDiscoveryConfig(listenCfg *listenConfig) (*enode.LocalNode, *discover.Co
 
 func listen(ln *enode.LocalNode, addr string) *sharedUDPConn {
 	if addr == "" {
-		addr = "0.0.0.0:0"
+		addr = "0.0.0.0:30303"
 	}
 	socket, err := net.ListenPacket("udp4", addr)
 	if err != nil {

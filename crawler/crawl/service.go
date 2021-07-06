@@ -4,6 +4,7 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
+	"eth2-crawler/crawler/p2p"
 
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -33,9 +34,12 @@ func discv5Crawl(ctx context.Context, listenCfg *listenConfig) error {
 	if err != nil {
 		return err
 	}
-	defer disc.Close()
+	host, err := p2p.NewHost()
+	if err != nil {
+		return err
+	}
 
-	c := newCrawler(disc, listenCfg.privateKey, disc.RandomNodes())
+	c := newCrawler(disc, listenCfg.privateKey, disc.RandomNodes(), host)
 	c.run(ctx)
 	return nil
 }

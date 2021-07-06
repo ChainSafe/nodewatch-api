@@ -3,6 +3,8 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
+	"eth2-crawler/crawler/p2p"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/log"
 
@@ -14,18 +16,20 @@ type crawler struct {
 	iter       enode.Iterator
 	nodeCh     chan *enode.Node
 	privateKey *ecdsa.PrivateKey
+	host       p2p.Host
 }
 
 type resolver interface {
 	RequestENR(*enode.Node) (*enode.Node, error)
 }
 
-func newCrawler(disc resolver, privateKey *ecdsa.PrivateKey, iter enode.Iterator) *crawler {
+func newCrawler(disc resolver, privateKey *ecdsa.PrivateKey, iter enode.Iterator, host p2p.Host) *crawler {
 	c := &crawler{
 		disc:       disc,
 		privateKey: privateKey,
 		iter:       iter,
 		nodeCh:     make(chan *enode.Node),
+		host:       host,
 	}
 	return c
 }
@@ -55,33 +59,72 @@ func (c *crawler) runIterator(ctx context.Context, doneCh chan enode.Iterator, i
 	}
 }
 
+var ct = 0
+var count = 0
+var tcp = 0
+
 func (c *crawler) collectNodeInfo(node *enode.Node) {
+	fmt.Println("total:", ct)
+	ct++
 	// TODO check db. if node already exists update node. else insert as new node
 	log.Info("found a node", log.Ctx{
 		"node": node,
 	})
-	// Request the node record to check if the node is active and update the status accordingly.
-	nn, err := c.disc.RequestENR(node)
-	if err != nil {
-		log.Warn("failed on Requesting enr", log.Ctx{"err": err})
-		return
-	}
 	log.Info("retrieved enr successfully", log.Ctx{
-		"node_id":   nn.ID(),
-		"node_ip ":  nn.IP(),
-		"node tcp ": nn.TCP(),
-		"node_udp":  nn.UDP(),
+		"node_id":   node.ID(),
+		"node_ip ":  node.IP(),
+		"node tcp ": node.TCP(),
+		"node_udp":  node.UDP(),
 	})
-
-	// TODO : rlpxPing is not working as expected. This is just a placeholder for now.
-	if nn.TCP() == 0 {
+	// only consider the node having tcp port exported
+	if node.TCP() == 0 {
 		return
+	} else {
+		fmt.Println(node.String())
 	}
-	// get additional info
-	h, err := rlpxPing(c.privateKey, nn)
+	fmt.Println("tcp_count:", tcp)
+	tcp++
+	ctx, cf := context.WithCancel(context.Background())
+	peerID, err := c.host.ConnectToPair(ctx, node.String())
 	if err != nil {
-		log.Error("failed on rlpx ping", log.Ctx{"err": err})
+		cf()
+		fmt.Println(err)
 		return
+	} else {
+		count++
+		fmt.Println("connection successful: ", count)
+
 	}
-	log.Info("rlpxPing: ", log.Ctx{"client_name": h.Name, "client_version": h.Version})
+
+	err = c.host.IdentifyRequest(ctx, peerID)
+	if err != nil {
+		fmt.Println("error on identify", err)
+		err = c.host.CloseConnection(peerID)
+		if err != nil {
+			fmt.Println("error closing connection", err)
+		}
+		return
+	} else {
+		fmt.Println("indentified")
+		err = c.host.CloseConnection(peerID)
+		if err != nil {
+			fmt.Println("error closing connection", err)
+		}
+	}
+
+	v, err := c.host.GetProtocolVersion(peerID)
+	if err != nil {
+		fmt.Println("error on p version", err)
+		return
+	} else {
+		fmt.Println("v: ", v)
+	}
+	a, err := c.host.GetAgentVersion(peerID)
+	if err != nil {
+		fmt.Println("error on agent", err)
+		return
+	} else {
+		fmt.Println("agent:", a)
+	}
+
 }
