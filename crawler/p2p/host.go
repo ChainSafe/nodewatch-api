@@ -1,3 +1,4 @@
+// Package p2p represent p2p host service
 package p2p
 
 import (
@@ -5,11 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/libp2p/go-libp2p-core/network"
+
 	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
-
-	"github.com/ethereum/go-ethereum/p2p/enode"
-
-	"github.com/multiformats/go-multiaddr"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
@@ -17,110 +16,51 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 )
 
+// Client represent custom p2p client
 type Client struct {
 	host.Host
+	idSvc idService
 }
 
+// Host represent p2p services
 type Host interface {
-	ConnectToPair(ctx context.Context, enr string) (peer.ID, error)
-	CloseConnection(peerID peer.ID) error
-	StorePair(enr string, peerId peer.ID) error
-	GetPair(peerId peer.ID) (*enode.Node, error)
-	IdentifyRequest(ctx context.Context, peerId peer.ID) error
-	GetProtocolVersion(peerId peer.ID) (string, error)
-	GetAgentVersion(peerId peer.ID) (string, error)
+	IdentifyRequest(ctx context.Context, peerInfo *peer.AddrInfo) error
+	GetProtocolVersion(peer.ID) (string, error)
+	GetAgentVersion(peer.ID) (string, error)
 }
 
-func NewHost() (Host, error) {
-	h, err := libp2p.New(context.Background())
+type idService interface {
+	IdentifyWait(c network.Conn) <-chan struct{}
+}
+
+// NewHost initializes custom host
+func NewHost(opt ...libp2p.Option) (Host, error) {
+	h, err := libp2p.New(context.Background(), opt...)
 	if err != nil {
 		return nil, err
 	}
-	return &Client{Host: h}, nil
+	idService, err := identify.NewIDService(h)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{Host: h, idSvc: idService}, nil
 }
 
-func (c *Client) ConnectToPair(ctx context.Context, enr string) (peer.ID, error) {
-	madd, err := getMultiAddr(enr)
+// IdentifyRequest performs libp2p identify request after connecting to peer.
+// It disconnects to peer after request is done
+func (c *Client) IdentifyRequest(ctx context.Context, peerInfo *peer.AddrInfo) error {
+	// Connect to peer first
+	err := c.Connect(ctx, *peerInfo)
 	if err != nil {
-		return "", fmt.Errorf("error constructing multiaddress from string: %v", err)
+		return fmt.Errorf("error connecting to peer: %w", err)
 	}
-	peerInfo, err := peer.AddrInfoFromP2pAddr(madd)
-	if err != nil {
-		return "", fmt.Errorf("error getting addressinfo from multiaddress: %v", err)
-	}
-
-	err = c.Connect(ctx, *peerInfo)
-	if err != nil {
-		return "", fmt.Errorf("error connecting to peer: %v", err)
-	}
-	return peerInfo.ID, nil
-}
-
-func (c *Client) CloseConnection(peerID peer.ID) error {
-	return c.Host.Network().ClosePeer(peerID)
-}
-
-func (c *Client) StorePair(enr string, peerId peer.ID) error {
-	key := "eth2-peers"
-	return c.Peerstore().Put(peerId, key, enr)
-}
-
-func (c *Client) GetPair(peerId peer.ID) (*enode.Node, error) {
-	key := "eth2-peers"
-	value, err := c.Peerstore().Get(peerId, key)
-	if err != nil {
-		return nil, fmt.Errorf("error getting pair from pair-store:%v", err)
-	}
-	enr, ok := value.(string)
-	if !ok {
-		return nil, fmt.Errorf("error converting interface to string")
-	}
-	// get enode.Node from enr string
-	node, err := parseEnrOrEnode(enr)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing enode from string:%v", err)
-	}
-	return node, nil
-}
-
-func (c *Client) GetProtocolVersion(peerId peer.ID) (string, error) {
-	key := "ProtocolVersion"
-	value, err := c.Peerstore().Get(peerId, key)
-	if err != nil {
-		return "", fmt.Errorf("error getting protocal version:%v", err)
-	}
-	version, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("error converting interface to string")
-	}
-	return version, nil
-}
-
-func (c *Client) GetAgentVersion(peerId peer.ID) (string, error) {
-	key := "AgentVersion"
-	value, err := c.Peerstore().Get(peerId, key)
-	if err != nil {
-		return "", fmt.Errorf("error getting protocal version:%v", err)
-	}
-	version, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("error converting interface to string")
-	}
-	return version, nil
-}
-
-func (c *Client) IdentifyRequest(ctx context.Context, peerId peer.ID) error {
-	idService, err := identify.NewIDService(c)
-	if err != nil {
-		return err
-	}
-
-	if conns := c.Network().ConnsToPeer(peerId); len(conns) > 0 {
+	defer func() {
+		_ = c.Network().ClosePeer(peerInfo.ID)
+	}()
+	if conns := c.Network().ConnsToPeer(peerInfo.ID); len(conns) > 0 {
 		select {
-		case <-idService.IdentifyWait(conns[0]):
-			fmt.Println("completed identification")
+		case <-c.idSvc.IdentifyWait(conns[0]):
 		case <-ctx.Done():
-			fmt.Println("canceled waiting for identification")
 		}
 	} else {
 		return errors.New("not connected to peer, cannot await connection identify")
@@ -128,18 +68,32 @@ func (c *Client) IdentifyRequest(ctx context.Context, peerId peer.ID) error {
 	return nil
 }
 
-// construct addr info from enr string
-func getMultiAddr(v string) (multiaddr.Multiaddr, error) {
-	muAddr, err := multiaddr.NewMultiaddr(v)
+// GetProtocolVersion returns peer protocol version from peerstore.
+// Need to call IdentifyRequest first for a peer.
+func (c *Client) GetProtocolVersion(peerID peer.ID) (string, error) {
+	key := "ProtocolVersion"
+	value, err := c.Peerstore().Get(peerID, key)
 	if err != nil {
-		en, err := parseEnrOrEnode(v)
-		if err != nil {
-			return nil, err
-		}
-		muAddr, err = enodeToMultiAddr(en)
-		if err != nil {
-			return nil, err
-		}
+		return "", fmt.Errorf("error getting protocol version:%w", err)
 	}
-	return muAddr, nil
+	version, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("error converting interface to string")
+	}
+	return version, nil
+}
+
+// GetAgentVersion returns peer agent version  from peerstore.
+// Need to call IdentifyRequest first for a peer.
+func (c *Client) GetAgentVersion(peerID peer.ID) (string, error) {
+	key := "AgentVersion"
+	value, err := c.Peerstore().Get(peerID, key)
+	if err != nil {
+		return "", fmt.Errorf("error getting protocol version:%w", err)
+	}
+	version, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("error converting interface to string")
+	}
+	return version, nil
 }

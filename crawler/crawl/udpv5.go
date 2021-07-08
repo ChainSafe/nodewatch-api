@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -15,13 +14,16 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-// StartV5 starts an ephemeral discovery v5 node.
+// startV5 starts an ephemeral discovery v5 node.
 func startV5(listenCfg *listenConfig) (*discover.UDPv5, error) {
 	ln, config, err := getDiscoveryConfig(listenCfg)
 	if err != nil {
 		return nil, err
 	}
-	socket := listen(ln, listenCfg.listenAddress)
+	socket, err := listen(listenCfg)
+	if err != nil {
+		return nil, err
+	}
 	disc, err := discover.ListenV5(socket, ln, *config)
 	if err != nil {
 		return nil, err
@@ -29,66 +31,39 @@ func startV5(listenCfg *listenConfig) (*discover.UDPv5, error) {
 	return disc, nil
 }
 
+// getDiscoveryConfig returns config for listening v5 node for peer discovery
 func getDiscoveryConfig(listenCfg *listenConfig) (*enode.LocalNode, *discover.Config, error) {
 	cfg := new(discover.Config)
 
 	cfg.PrivateKey = listenCfg.privateKey
 	bootNodes, err := parseBootNodes(listenCfg.bootNodeAddrs)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error parsing bootnodes: %w", err)
 	}
 	cfg.Bootnodes = bootNodes
 
 	db, err := enode.OpenDB(listenCfg.dbPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error opening db: %w", err)
 	}
 	ln := enode.NewLocalNode(db, cfg.PrivateKey)
 	return ln, cfg, nil
 }
 
-func listen(ln *enode.LocalNode, addr string) *sharedUDPConn {
-	if addr == "" {
-		addr = "0.0.0.0:30303"
+// listen opens an udp connections on given address
+func listen(cfg *listenConfig) (*net.UDPConn, error) {
+	udpAddr := &net.UDPAddr{
+		IP:   cfg.listenAddress,
+		Port: cfg.listenPORT,
 	}
-	socket, err := net.ListenPacket("udp4", addr)
+	conn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error listening to udp: %w", err)
 	}
-	usocket := socket.(*net.UDPConn)
-	uaddr := socket.LocalAddr().(*net.UDPAddr)
-	if uaddr.IP.IsUnspecified() {
-		ln.SetFallbackIP(net.IP{127, 0, 0, 1})
-	} else {
-		ln.SetFallbackIP(uaddr.IP)
-	}
-	ln.SetFallbackUDP(uaddr.Port)
-
-	unhandled := make(chan discover.ReadPacket, 100)
-	return &sharedUDPConn{usocket, unhandled}
+	return conn, nil
 }
 
-// sharedUDPConn implements a shared connection. Write sends messages to the underlying connection while read returns
-// messages that were found unprocessable and sent to the unhandled channel by the primary listener.
-type sharedUDPConn struct {
-	*net.UDPConn
-	unhandled chan discover.ReadPacket
-}
-
-// ReadFromUDP implements discover.UDPConn
-func (s *sharedUDPConn) ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error) {
-	packet, ok := <-s.unhandled
-	if !ok {
-		return 0, nil, errors.New("connection was closed")
-	}
-	l := len(packet.Data)
-	if l > len(b) {
-		l = len(b)
-	}
-	copy(b[:l], packet.Data[:l])
-	return l, packet.Addr, nil
-}
-
+// parseBootNodes parse bootnodes from []string
 func parseBootNodes(nodeStr []string) ([]*enode.Node, error) {
 	nodes := make([]*enode.Node, len(nodeStr))
 	var err error

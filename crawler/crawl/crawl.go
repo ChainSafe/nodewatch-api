@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"eth2-crawler/crawler/p2p"
+	"eth2-crawler/crawler/util"
 	"fmt"
+
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 
@@ -19,10 +22,12 @@ type crawler struct {
 	host       p2p.Host
 }
 
+// resolver holds methods of discovery v5
 type resolver interface {
-	RequestENR(*enode.Node) (*enode.Node, error)
+	Ping(n *enode.Node) error
 }
 
+// newCrawler inits new crawler service
 func newCrawler(disc resolver, privateKey *ecdsa.PrivateKey, iter enode.Iterator, host p2p.Host) *crawler {
 	c := &crawler{
 		disc:       disc,
@@ -34,6 +39,7 @@ func newCrawler(disc resolver, privateKey *ecdsa.PrivateKey, iter enode.Iterator
 	return c
 }
 
+// run runs the crawler
 func (c *crawler) run(ctx context.Context) {
 	doneCh := make(chan enode.Iterator)
 	go c.runIterator(ctx, doneCh, c.iter)
@@ -43,11 +49,14 @@ func (c *crawler) run(ctx context.Context) {
 			c.collectNodeInfo(n)
 		case <-doneCh:
 			// crawling finished
+			log.Info("finished iterator")
+			fmt.Println("finished iterator")
 			return
 		}
 	}
 }
 
+// runIterator uses the node iterator and sends node data through channel
 func (c *crawler) runIterator(ctx context.Context, doneCh chan enode.Iterator, it enode.Iterator) {
 	defer func() { doneCh <- it }()
 	for it.Next() {
@@ -59,72 +68,60 @@ func (c *crawler) runIterator(ctx context.Context, doneCh chan enode.Iterator, i
 	}
 }
 
-var ct = 0
-var count = 0
-var tcp = 0
-
 func (c *crawler) collectNodeInfo(node *enode.Node) {
-	fmt.Println("total:", ct)
-	ct++
-	// TODO check db. if node already exists update node. else insert as new node
-	log.Info("found a node", log.Ctx{
-		"node": node,
-	})
-	log.Info("retrieved enr successfully", log.Ctx{
-		"node_id":   node.ID(),
-		"node_ip ":  node.IP(),
-		"node tcp ": node.TCP(),
-		"node_udp":  node.UDP(),
-	})
 	// only consider the node having tcp port exported
 	if node.TCP() == 0 {
 		return
-	} else {
-		fmt.Println(node.String())
 	}
-	fmt.Println("tcp_count:", tcp)
-	tcp++
-	ctx, cf := context.WithCancel(context.Background())
-	peerID, err := c.host.ConnectToPair(ctx, node.String())
-	if err != nil {
-		cf()
-		fmt.Println(err)
+	// filter only eth2 nodes
+	eth2Data, err := util.ParseEnrEth2Data(node)
+	if err != nil { // not eth2 nodes
 		return
-	} else {
+	}
+	log.Info("found a eth2 node", log.Ctx{"node": node})
+
+	// get basic info
+	peer, err := NewPeer(node, eth2Data)
+	if err != nil {
+		return
+	}
+
+	go c.collectNodeInfoRetryer(peer)
+}
+
+func (c *crawler) collectNodeInfoRetryer(peer *Peer) {
+	count := 0
+	var err error
+	for count < 20 {
+		time.Sleep(time.Second * 5)
 		count++
-		fmt.Println("connection successful: ", count)
-
-	}
-
-	err = c.host.IdentifyRequest(ctx, peerID)
-	if err != nil {
-		fmt.Println("error on identify", err)
-		err = c.host.CloseConnection(peerID)
+		ctx := context.Background()
+		err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
 		if err != nil {
-			fmt.Println("error closing connection", err)
+			continue
 		}
-		return
-	} else {
-		fmt.Println("indentified")
-		err = c.host.CloseConnection(peerID)
+		var ag, pv string
+		ag, err = c.host.GetAgentVersion(peer.ID)
 		if err != nil {
-			fmt.Println("error closing connection", err)
+			continue
+		} else {
+			peer.SetAgentVersion(ag)
 		}
-	}
+		pv, err = c.host.GetProtocolVersion(peer.ID)
+		if err != nil {
+			continue
+		} else {
+			peer.SetProtocolVersion(pv)
+		}
 
-	v, err := c.host.GetProtocolVersion(peerID)
-	if err != nil {
-		fmt.Println("error on p version", err)
+		// successfully got all the node info's
+		peer.SetConnectionStatus(true)
+		log.Info("successfully collected all info", peer.Log())
 		return
-	} else {
-		fmt.Println("v: ", v)
 	}
-	a, err := c.host.GetAgentVersion(peerID)
-	if err != nil {
-		fmt.Println("error on agent", err)
-		return
-	} else {
-		fmt.Println("agent:", a)
-	}
-
+	// unsuccessful
+	log.Error("failed on retryer", log.Ctx{
+		"attempt": count,
+		"error":   err,
+	})
 }
