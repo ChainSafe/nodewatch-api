@@ -1,3 +1,4 @@
+// Package graph contans graph related code
 package graph
 
 // This file will not be regenerated automatically.
