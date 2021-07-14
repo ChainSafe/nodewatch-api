@@ -2,8 +2,8 @@
 package store
 
 import (
-	"eth2-crawler/config"
 	"eth2-crawler/store/mongo"
+	"eth2-crawler/utils/config"
 )
 
 // Provider represents store provider interface that can be implemented by different DB engines
