@@ -1,0 +1,29 @@
+type Node {
+  id: String!
+  ip4: String
+  ip6: String
+  tcpPort: Int
+  udpPort: Int
+  attnets: String
+  eth2: String!
+  enode: String!
+  agentName: String!
+  agentVersion: String!
+  country: String
+  city: String
+  isp: String
+  isConnectable: Boolean!
+  lastConnected: Int
+}
+
+type AggregateData {
+  name: String!
+  count: Int!
+}
+
+type Query {
+  aggregateByAgentName: [AggregateData!]!
+  aggregateByCountry: [AggregateData!]!
+  aggregateByOperatingSystem: [AggregateData!]!
+  aggregateByNetwork: [AggregateData!]!
+}
