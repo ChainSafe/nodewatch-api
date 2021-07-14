@@ -3,9 +3,10 @@ package mongo
 
 import (
 	"context"
-	"eth2-crawler/config"
 	"fmt"
 	"time"
+
+	"eth2-crawler/utils/config"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
