@@ -3,6 +3,7 @@ package crawler
 
 import (
 	"eth2-crawler/crawler/crawl"
+	"eth2-crawler/store"
 
 	"github.com/ethereum/go-ethereum/params"
 
@@ -10,7 +11,7 @@ import (
 )
 
 // Start starts the crawler service
-func Start() {
+func Start(peerStore store.Provider) {
 	h := log.CallerFileHandler(log.StdoutHandler)
 	log.Root().SetHandler(h)
 
@@ -19,6 +20,6 @@ func Start() {
 	)
 	log.Root().SetHandler(handler)
 
-	err := crawl.Initialize(params.V5Bootnodes)
+	err := crawl.Initialize(params.V5Bootnodes, peerStore)
 	panic(err)
 }

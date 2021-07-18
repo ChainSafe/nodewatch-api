@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"eth2-crawler/crawler/p2p"
+	"eth2-crawler/store"
 	"fmt"
 	"net"
 
@@ -31,7 +32,7 @@ type listenConfig struct {
 }
 
 // Initialize initializes the core crawler component
-func Initialize(bootNodeAddrs []string) error {
+func Initialize(bootNodeAddrs []string, peerStore store.Provider) error {
 	ctx := context.Background()
 	pkey, _ := crypto.GenerateKey()
 	cfg := &listenConfig{
@@ -41,11 +42,11 @@ func Initialize(bootNodeAddrs []string) error {
 		dbPath:        "",
 		privateKey:    pkey,
 	}
-	return discv5Crawl(ctx, cfg)
+	return discv5Crawl(ctx, cfg, peerStore)
 }
 
 // discv5Crawl start the crawler
-func discv5Crawl(ctx context.Context, listenCfg *listenConfig) error {
+func discv5Crawl(ctx context.Context, listenCfg *listenConfig, peerStore store.Provider) error {
 	disc, err := startV5(listenCfg)
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func discv5Crawl(ctx context.Context, listenCfg *listenConfig) error {
 		return err
 	}
 
-	c := newCrawler(disc, listenCfg.privateKey, disc.RandomNodes(), host)
+	c := newCrawler(disc, listenCfg.privateKey, disc.RandomNodes(), host, peerStore)
 	c.run(ctx)
 	return nil
 }

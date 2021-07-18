@@ -1,4 +1,5 @@
-package crawl
+// Package peer holds peer related functionality
+package peer
 
 import (
 	"encoding/hex"
@@ -26,24 +27,24 @@ type UserAgent struct {
 
 // Peer holds all information of a eth2 peer
 type Peer struct {
-	ID     peer.ID  `json:"id"`
-	NodeID enode.ID `json:"node_id"`
-	Pubkey string   `json:"pubkey"`
+	ID     peer.ID  `json:"id" bson:"_id"`
+	NodeID enode.ID `json:"node_id" bson:"node_id"`
+	Pubkey string   `json:"pubkey" bson:"pubkey"`
 
-	IP      net.IP   `json:"ip"`
-	TCPPort int      `json:"tcp_port"`
-	UDPPort int      `json:"udp_port"`
-	Addrs   []string `json:"addrs,omitempty"`
+	IP      net.IP   `json:"ip" bson:"ip"`
+	TCPPort int      `json:"tcp_port" bson:"tcp_port"`
+	UDPPort int      `json:"udp_port" bson:"udp_port"`
+	Addrs   []string `json:"addrs,omitempty" bson:"addrs"`
 
-	Attnets common.AttnetBits `json:"enr_attnets,omitempty"`
+	Attnets common.AttnetBits `json:"enr_attnets,omitempty" bson:"attnets"`
 
-	Eth2Data *common.Eth2Data `json:"eth2_data"`
+	Eth2Data *common.Eth2Data `json:"eth2_data" bson:"eth_2_data"`
 
-	UserAgent       *UserAgent `json:"user_agent,omitempty"`
-	ProtocolVersion string     `json:"protocol_version,omitempty"`
+	UserAgent       *UserAgent `json:"user_agent,omitempty" bson:"user_agent"`
+	ProtocolVersion string     `json:"protocol_version,omitempty" bson:"protocol_version"`
 
-	IsConnectable bool  `json:"is_connectable"`
-	LastConnected int64 `json:"last_connected"`
+	IsConnectable bool  `json:"is_connectable" bson:"is_connectable"`
+	LastConnected int64 `json:"last_connected" bson:"last_connected"`
 }
 
 // NewPeer initializes new peer

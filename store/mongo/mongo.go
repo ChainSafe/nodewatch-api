@@ -3,8 +3,12 @@ package mongo
 
 import (
 	"context"
+	"errors"
+	"eth2-crawler/crawler/peer"
 	"fmt"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"eth2-crawler/utils/config"
 
@@ -50,4 +54,32 @@ func New(cfg *config.Database) (*store, error) {
 		coll:    client.Database(cfg.Database).Collection(cfg.Collection),
 		timeout: timeout,
 	}, nil
+}
+
+// Create creates new peer entry
+func (s *store) Create(ctx context.Context, peer *peer.Peer) error {
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	// check if already exists
+	_, err := s.View(ctx, string(peer.ID))
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			_, err = s.coll.InsertOne(ctx, peer, options.InsertOne())
+			return err
+		}
+		return err
+	}
+	return nil
+}
+
+// View returns Peer by ID
+func (s *store) View(ctx context.Context, id string) (*peer.Peer, error) {
+	ctx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+
+	filter := bson.D{{Key: "_id", Value: id}}
+	res := new(peer.Peer)
+	err := s.coll.FindOne(ctx, filter).Decode(res)
+	return res, err
 }
