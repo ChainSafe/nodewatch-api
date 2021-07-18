@@ -5,7 +5,10 @@ server:
   write_timeout_seconds: 360
 
 database:
-  request_timeout_sec: 30
+  request_timeout_sec: 5
   concurrency: 2
   database: crawler
   collection: nodes
+
+resolver:
+  request_timeout_sec: 3

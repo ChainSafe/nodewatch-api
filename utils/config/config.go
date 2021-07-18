@@ -2,6 +2,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,8 +12,9 @@ import (
 
 // Configuration holds data necessary for configuring application
 type Configuration struct {
-	Server *Server   `yaml:"server,omitempty"`
-	DB     *Database `yaml:"database,omitempty"`
+	Server   *Server   `yaml:"server,omitempty"`
+	Database *Database `yaml:"database,omitempty"`
+	Resolver *Resolver `yaml:"resolver,omitempty"`
 }
 
 // Server holds data necessary for server configuration
@@ -32,8 +34,26 @@ type Database struct {
 	MaxRetries  int    `yaml:"max_retries"`
 }
 
-func loadDatabaseURI() string {
-	return os.Getenv("CSF_MONGODB_CONN")
+// Resolver provides config for resolver
+type Resolver struct {
+	APIKey  string `yaml:"-"`
+	Timeout int    `yaml:"request_timeout_sec"`
+}
+
+func loadDatabaseURI() (string, error) {
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		return "", errors.New("MONGODB_URI is required")
+	}
+	return mongoURI, nil
+}
+
+func loadResolverAPIKey() (string, error) {
+	resolverAPIKey := os.Getenv("RESOLVER_API_KEY")
+	if resolverAPIKey == "" {
+		return "", errors.New("RESOLVER_API_KEY is required")
+	}
+	return resolverAPIKey, nil
 }
 
 // Load returns Configuration struct
@@ -51,7 +71,14 @@ func Load(path string) (*Configuration, error) {
 	}
 
 	// load envs
-	cfg.DB.URI = loadDatabaseURI()
+	cfg.Database.URI, err = loadDatabaseURI()
+	if err != nil {
+		return nil, err
+	}
+	cfg.Resolver.APIKey, err = loadResolverAPIKey()
+	if err != nil {
+		return nil, err
+	}
 
 	return cfg, nil
 }

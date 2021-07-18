@@ -4,21 +4,19 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
-	"eth2-crawler/crawler/p2p"
 	"fmt"
 	"net"
 
-	noise "github.com/libp2p/go-libp2p-noise"
-
-	ma "github.com/multiformats/go-multiaddr"
-
-	"github.com/libp2p/go-tcp-transport"
-
-	ic "github.com/libp2p/go-libp2p-core/crypto"
-
-	"github.com/libp2p/go-libp2p"
+	"eth2-crawler/crawler/p2p"
+	ipResolver "eth2-crawler/resolver"
+	"eth2-crawler/store"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/libp2p/go-libp2p"
+	ic "github.com/libp2p/go-libp2p-core/crypto"
+	noise "github.com/libp2p/go-libp2p-noise"
+	"github.com/libp2p/go-tcp-transport"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 // listenConfig holds configuration for running v5discovry node
@@ -31,7 +29,7 @@ type listenConfig struct {
 }
 
 // Initialize initializes the core crawler component
-func Initialize(bootNodeAddrs []string) error {
+func Initialize(peerStore store.Provider, ipResolver ipResolver.Provider, bootNodeAddrs []string) error {
 	ctx := context.Background()
 	pkey, _ := crypto.GenerateKey()
 	cfg := &listenConfig{
@@ -41,11 +39,11 @@ func Initialize(bootNodeAddrs []string) error {
 		dbPath:        "",
 		privateKey:    pkey,
 	}
-	return discv5Crawl(ctx, cfg)
+	return discv5Crawl(ctx, peerStore, ipResolver, cfg)
 }
 
 // discv5Crawl start the crawler
-func discv5Crawl(ctx context.Context, listenCfg *listenConfig) error {
+func discv5Crawl(ctx context.Context, peerStore store.Provider, ipResolver ipResolver.Provider, listenCfg *listenConfig) error {
 	disc, err := startV5(listenCfg)
 	if err != nil {
 		return err
@@ -67,7 +65,7 @@ func discv5Crawl(ctx context.Context, listenCfg *listenConfig) error {
 		return err
 	}
 
-	c := newCrawler(disc, listenCfg.privateKey, disc.RandomNodes(), host)
+	c := newCrawler(disc, peerStore, ipResolver, listenCfg.privateKey, disc.RandomNodes(), host)
 	c.run(ctx)
 	return nil
 }

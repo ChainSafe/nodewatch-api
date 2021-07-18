@@ -22,5 +22,9 @@ test:
 	go test ./...
 
 run:
-	go run ./cmd/main.go
-
+	@echo "  >  \033[32mUsing Docker Container for development...\033[0m "
+	@echo "  >  \033[32mRemoving old User Service stuff...\033[0m "
+	docker-compose -f docker-compose.yaml down -v
+	@echo "  >  \033[32mStarting Crawler Service w/o build...\033[0m "
+	docker-compose -f docker-compose.yaml up
+ 
