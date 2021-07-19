@@ -64,7 +64,7 @@ func Load(path string) (*Configuration, error) {
 
 	var cfg = new(Configuration)
 
-	if err := yaml.Unmarshal(bytes, cfg); err != nil {
+	if err = yaml.Unmarshal(bytes, cfg); err != nil {
 		return nil, fmt.Errorf("unable to decode into struct, %w", err)
 	}
 

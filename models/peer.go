@@ -120,7 +120,7 @@ func (p *Peer) SetConnectionStatus(status bool) {
 	}
 }
 
-// SetGeoLocation sets the geolocation infomation
+// SetGeoLocation sets the geolocation information
 func (p *Peer) SetGeoLocation(geoLocation *GeoLocation) {
 	p.GeoLocation = geoLocation
 }

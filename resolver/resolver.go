@@ -71,7 +71,7 @@ func (c *client) GetGeoLocation(ctx context.Context, ipAddr string) (*models.Geo
 	result := &geoInformation{}
 	err = json.Unmarshal(resBody, result)
 	if err != nil {
-		return nil, fmt.Errorf("unable to unmarshal body. error::%s", err.Error())
+		return nil, fmt.Errorf("unable to unmarshal body. error::%w", err)
 	}
 
 	geoLoc := &models.GeoLocation{

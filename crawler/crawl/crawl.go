@@ -125,7 +125,8 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 		peer.SetConnectionStatus(true)
 		log.Info("successfully collected all info", peer.Log())
 
-		oldPeer, err := c.peerStore.View(ctx, peer.ID)
+		var oldPeer *models.Peer
+		oldPeer, err = c.peerStore.View(ctx, peer.ID)
 		if err != nil {
 			if errors.Is(err, store.ErrPeerNotFound) {
 				c.savePeerInformation(ctx, peer)
