@@ -3,6 +3,7 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"time"
 
@@ -122,30 +123,64 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 
 		// successfully got all the node info's
 		peer.SetConnectionStatus(true)
+		log.Info("successfully collected all info", peer.Log())
 
-		// TODO: get the geo location details if we don't already have it in store
-		geoLoc, err := c.ipResolver.GetGeoLocation(ctx, peer.IP)
+		oldPeer, err := c.peerStore.View(ctx, peer.ID)
 		if err != nil {
-			log.Error("unable to get geo information", log.Ctx{
-				"error":   err,
-				"ip_addr": peer.IP,
-			})
+			if errors.Is(err, store.ErrPeerNotFound) {
+				c.savePeerInformation(ctx, peer)
+				return
+			}
+			log.Error("failed to view from store", log.Ctx{"error": err})
 			return
 		}
 
-		peer.SetGeoLocation(geoLoc)
-		log.Info("successfully collected all info", peer.Log())
-		err = c.peerStore.Upsert(context.TODO(), peer)
-		if err != nil {
-			log.Error("unable to write peer info to the store", log.Ctx{
-				"error": err,
-			})
-		}
+		c.updatePeerInformation(ctx, peer, oldPeer)
 		return
 	}
+
 	// unsuccessful
 	log.Error("failed on retryer", log.Ctx{
 		"attempt": count,
 		"error":   err,
 	})
+}
+
+func (c *crawler) savePeerInformation(ctx context.Context, peer *models.Peer) {
+	geoLoc, err := c.ipResolver.GetGeoLocation(ctx, peer.IP)
+	if err != nil {
+		log.Error("unable to get geo information", log.Ctx{
+			"error":   err,
+			"ip_addr": peer.IP,
+		})
+		return
+	}
+
+	peer.SetGeoLocation(geoLoc)
+
+	err = c.peerStore.Create(ctx, peer)
+	if err != nil {
+		log.Error("unable to save peer information to store", log.Ctx{"error": err})
+	}
+}
+
+func (c *crawler) updatePeerInformation(ctx context.Context, new *models.Peer, old *models.Peer) {
+	// TODO: update the IP  details after certain interval
+	if new.IP != old.IP {
+		geoLoc, err := c.ipResolver.GetGeoLocation(ctx, new.IP)
+		if err != nil {
+			log.Error("unable to get geo information", log.Ctx{
+				"error":   err,
+				"ip_addr": new.IP,
+			})
+			return
+		}
+
+		new.SetGeoLocation(geoLoc)
+	}
+
+	err := c.peerStore.Update(ctx, new)
+	if err != nil {
+		log.Error("unable to update peer information to store", log.Ctx{"error": err})
+	}
 }

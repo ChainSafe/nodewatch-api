@@ -37,8 +37,7 @@ type GeoLocation struct {
 
 // Peer holds all information of a eth2 peer
 type Peer struct {
-	ID     peer.ID `json:"id" bson:"-"`
-	PeerID string  `json:"peer_id" bson:"peer_id"`
+	ID     peer.ID `json:"id" bson:"_id"`
 	NodeID string  `json:"node_id" bson:"node_id"`
 	Pubkey string  `json:"pubkey"`
 
@@ -81,7 +80,6 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 	}
 	return &Peer{
 		ID:       addr.ID,
-		PeerID:   addr.ID.String(),
 		NodeID:   node.ID().String(),
 		Pubkey:   hex.EncodeToString(pkByte),
 		IP:       node.IP().String(),
@@ -104,6 +102,9 @@ func (p *Peer) SetAgentVersion(ag string) {
 	// ag = Name/Version/OS(or git commit hash for Prysm)
 	userAgent := new(UserAgent)
 	parts := strings.Split(ag, "/")
+	if parts[0] == "" {
+		parts = parts[1:]
+	}
 	userAgent.Name = parts[0]
 	if len(parts) > 1 {
 		userAgent.Version = parts[1]

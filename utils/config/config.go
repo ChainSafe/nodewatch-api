@@ -26,12 +26,10 @@ type Server struct {
 
 // Database is a MongoDB config
 type Database struct {
-	URI         string `yaml:"-"`
-	Timeout     int    `yaml:"request_timeout_sec"`
-	Database    string `yaml:"database"`
-	Collection  string `yaml:"collection"`
-	Concurrency int    `yaml:"concurrency"`
-	MaxRetries  int    `yaml:"max_retries"`
+	URI        string `yaml:"-"`
+	Timeout    int    `yaml:"request_timeout_sec"`
+	Database   string `yaml:"database"`
+	Collection string `yaml:"collection"`
 }
 
 // Resolver provides config for resolver

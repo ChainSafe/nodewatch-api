@@ -8,40 +8,42 @@ import (
 	"time"
 
 	"eth2-crawler/models"
+	"eth2-crawler/store"
 	"eth2-crawler/utils/config"
 
+	peer "github.com/libp2p/go-libp2p-peer"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-type store struct {
+type mongoStore struct {
 	client  *mongo.Client
 	coll    *mongo.Collection
 	timeout time.Duration
 }
 
-func (s *store) Upsert(ctx context.Context, peer *models.Peer) error {
-	_, err := s.View(ctx, peer.PeerID)
+func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
+	_, err := s.View(ctx, peer.ID)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return s.create(ctx, peer)
+		if errors.Is(err, store.ErrPeerNotFound) {
+			return s.Create(ctx, peer)
 		}
 		return err
 	}
 
-	return s.update(ctx, peer)
+	return s.Update(ctx, peer)
 }
 
-func (s *store) create(ctx context.Context, peer *models.Peer) error {
+func (s *mongoStore) Create(ctx context.Context, peer *models.Peer) error {
 	_, err := s.coll.InsertOne(ctx, peer, options.InsertOne())
 	return err
 }
 
-func (s *store) update(ctx context.Context, peer *models.Peer) error {
+func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
 	filter := bson.D{
-		{Key: "id", Value: peer.ID},
+		{Key: "_id", Value: peer.ID},
 	}
 	_, err := s.coll.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: peer}})
 	if err != nil {
@@ -50,13 +52,16 @@ func (s *store) update(ctx context.Context, peer *models.Peer) error {
 	return nil
 }
 
-func (s *store) View(ctx context.Context, peerID string) (*models.Peer, error) {
+func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, error) {
 	filter := bson.D{
-		{Key: "peer_id", Value: peerID},
+		{Key: "_id", Value: peerID},
 	}
 	res := new(models.Peer)
 	err := s.coll.FindOne(ctx, filter).Decode(res)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, store.ErrPeerNotFound
+		}
 		return nil, err
 	}
 
@@ -68,7 +73,7 @@ type aggregateData struct {
 	Count int    `json:"count" bson:"count"`
 }
 
-func (s *store) AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$group", Value: bson.D{
@@ -97,7 +102,7 @@ func (s *store) AggregateByAgentName(ctx context.Context) ([]*models.AggregateDa
 	return result, nil
 }
 
-func (s *store) AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$group", Value: bson.D{
@@ -125,7 +130,7 @@ func (s *store) AggregateByOperatingSystem(ctx context.Context) ([]*models.Aggre
 	return result, nil
 }
 
-func (s *store) AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$group", Value: bson.D{
@@ -154,7 +159,7 @@ func (s *store) AggregateByCountry(ctx context.Context) ([]*models.AggregateData
 }
 
 // New creates new instance of Entry Store based on MongoDB
-func New(cfg *config.Database) (*store, error) {
+func New(cfg *config.Database) (store.Provider, error) {
 	timeout := time.Duration(cfg.Timeout) * time.Second
 	opts := options.Client()
 
@@ -179,7 +184,7 @@ func New(cfg *config.Database) (*store, error) {
 		return nil, err
 	}
 
-	return &store{
+	return &mongoStore{
 		client:  client,
 		coll:    client.Database(cfg.Database).Collection(cfg.Collection),
 		timeout: timeout,

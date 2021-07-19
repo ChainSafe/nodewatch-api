@@ -11,7 +11,7 @@ import (
 	"eth2-crawler/graph"
 	"eth2-crawler/graph/generated"
 	ipResolver "eth2-crawler/resolver"
-	"eth2-crawler/store"
+	mongoStore "eth2-crawler/store/mongo"
 	"eth2-crawler/utils/config"
 	"eth2-crawler/utils/server"
 
@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("error loading configuration: %s", err.Error())
 	}
 
-	peerStore, err := store.New(cfg.Database)
+	peerStore, err := mongoStore.New(cfg.Database)
 	if err != nil {
 		log.Fatalf("error Initializing the peer store: %s", err.Error())
 	}
