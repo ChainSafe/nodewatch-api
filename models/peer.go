@@ -102,9 +102,6 @@ func (p *Peer) SetAgentVersion(ag string) {
 	// ag = Name/Version/OS(or git commit hash for Prysm)
 	userAgent := new(UserAgent)
 	parts := strings.Split(ag, "/")
-	if parts[0] == "" {
-		parts = parts[1:]
-	}
 	userAgent.Name = parts[0]
 	if len(parts) > 1 {
 		userAgent.Version = parts[1]
