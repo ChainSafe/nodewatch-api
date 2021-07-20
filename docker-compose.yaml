@@ -1,0 +1,44 @@
+version: '3.7'
+
+volumes:
+  mongo_data: {}
+
+networks:
+  crawler_net:
+    driver: bridge
+
+services:
+  mongo-db:
+    image: library/mongo:bionic
+    ports:
+      - "27017:27017/tcp"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USR:-mongoUsr}
+      MONGO_INITDB_ROOT_PASSWORD: ${CSF_MONGODB_PWD:-mongoPwd}
+    networks:
+      - crawler_net
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo-db:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: on-failure
+
+  # crawler:
+  #   image: "crawler-dev:latest"
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   command: '/crawler -p config.dev.yaml'
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "8080:8080/tcp"
+  #   depends_on:
+  #     - mongo-db
+  #   networks:
+  #     - crawler_net
+  #   restart: on-failure

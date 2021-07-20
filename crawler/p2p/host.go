@@ -6,14 +6,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/libp2p/go-libp2p-core/network"
-
-	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
-
-	"github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 )
 
 // Client represent custom p2p client

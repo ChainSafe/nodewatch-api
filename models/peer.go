@@ -1,15 +1,15 @@
-package crawl
+// Package models represent the models for the service
+package models
 
 import (
 	"encoding/hex"
 	"encoding/json"
-	"eth2-crawler/crawler/util"
-	"net"
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
+	"eth2-crawler/crawler/util"
 
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	ic "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -19,28 +19,39 @@ import (
 
 // UserAgent holds peer's client related info
 type UserAgent struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-	OS      string `json:"os"`
+	Name    string `json:"name" bson:"name"`
+	Version string `json:"version" bson:"version"`
+	OS      string `json:"os" bson:"os"`
+}
+
+// GeoLocation holds peer's geo location related info
+type GeoLocation struct {
+	ISP          string `json:"isp" bson:"isp"`
+	Organization string `json:"organization" bson:"organization"`
+	Country      string `json:"country_name" bson:"country"`
+	State        string `json:"state" bson:"state"`
+	City         string `json:"city" bson:"city"`
+	Latitude     string `json:"latitude" bson:"latitude"`
+	Longitude    string `json:"longitude" bson:"longitude"`
 }
 
 // Peer holds all information of a eth2 peer
 type Peer struct {
-	ID     peer.ID  `json:"id"`
-	NodeID enode.ID `json:"node_id"`
-	Pubkey string   `json:"pubkey"`
+	ID     peer.ID `json:"id" bson:"_id"`
+	NodeID string  `json:"node_id" bson:"node_id"`
+	Pubkey string  `json:"pubkey"`
 
-	IP      net.IP   `json:"ip"`
+	IP      string   `json:"ip"`
 	TCPPort int      `json:"tcp_port"`
 	UDPPort int      `json:"udp_port"`
 	Addrs   []string `json:"addrs,omitempty"`
 
-	Attnets common.AttnetBits `json:"enr_attnets,omitempty"`
+	Attnets  common.AttnetBits `json:"enr_attnets,omitempty"`
+	Eth2Data *common.Eth2Data  `json:"eth2_data" bson:"-"`
 
-	Eth2Data *common.Eth2Data `json:"eth2_data"`
-
-	UserAgent       *UserAgent `json:"user_agent,omitempty"`
-	ProtocolVersion string     `json:"protocol_version,omitempty"`
+	ProtocolVersion string       `json:"protocol_version,omitempty"`
+	UserAgent       *UserAgent   `json:"user_agent,omitempty"`
+	GeoLocation     *GeoLocation `json:"geolocation" bson:"geolocation"`
 
 	IsConnectable bool  `json:"is_connectable"`
 	LastConnected int64 `json:"last_connected"`
@@ -69,9 +80,9 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 	}
 	return &Peer{
 		ID:       addr.ID,
-		NodeID:   node.ID(),
+		NodeID:   node.ID().String(),
 		Pubkey:   hex.EncodeToString(pkByte),
-		IP:       node.IP(),
+		IP:       node.IP().String(),
 		TCPPort:  node.TCP(),
 		UDPPort:  node.UDP(),
 		Addrs:    addrStr,
@@ -107,6 +118,11 @@ func (p *Peer) SetConnectionStatus(status bool) {
 	if status {
 		p.LastConnected = time.Now().Unix()
 	}
+}
+
+// SetGeoLocation sets the geolocation information
+func (p *Peer) SetGeoLocation(geoLocation *GeoLocation) {
+	p.GeoLocation = geoLocation
 }
 
 // GetPeerInfo returns peer's AddrInfo

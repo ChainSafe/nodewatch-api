@@ -5,10 +5,13 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	"eth2-crawler/crawler"
 	"eth2-crawler/graph"
 	"eth2-crawler/graph/generated"
+	ipResolver "eth2-crawler/resolver"
+	mongoStore "eth2-crawler/store/mongo"
 	"eth2-crawler/utils/config"
 	"eth2-crawler/utils/server"
 
@@ -22,13 +25,20 @@ func main() {
 
 	cfg, err := config.Load(*cfgPath)
 	if err != nil {
-		log.Fatalf("error reading configuration files: %s", err.Error())
+		log.Fatalf("error loading configuration: %s", err.Error())
 	}
 
-	// TODO collect config from a config files or from command args and pass to Start()
-	go crawler.Start()
+	peerStore, err := mongoStore.New(cfg.Database)
+	if err != nil {
+		log.Fatalf("error Initializing the peer store: %s", err.Error())
+	}
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	resolverService := ipResolver.New(cfg.Resolver.APIKey, time.Duration(cfg.Resolver.Timeout)*time.Second)
+
+	// TODO collect config from a config files or from command args and pass to Start()
+	go crawler.Start(peerStore, resolverService)
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(peerStore)}))
 
 	// TODO: make playground accessible only in Dev mode
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
