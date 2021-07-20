@@ -27,18 +27,18 @@ services:
       start_period: 40s
     restart: on-failure
 
-  # crawler:
-  #   image: "crawler-dev:latest"
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   command: '/crawler -p config.dev.yaml'
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "8080:8080/tcp"
-  #   depends_on:
-  #     - mongo-db
-  #   networks:
-  #     - crawler_net
-  #   restart: on-failure
+  crawler:
+    image: "crawler-dev:latest"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: '/crawler -p config.dev.yaml'
+    env_file:
+      - .env
+    ports:
+      - "8080:8080/tcp"
+    depends_on:
+      - mongo-db
+    networks:
+      - crawler_net
+    restart: on-failure
