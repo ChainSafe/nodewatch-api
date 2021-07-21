@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 // Package crawler holds the whole crawler service. It includes crawler, db component and GraphQL
 package crawler
 
