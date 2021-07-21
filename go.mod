@@ -13,6 +13,6 @@ require (
 	github.com/protolambda/zrnt v0.16.6
 	github.com/protolambda/ztyp v0.1.8
 	github.com/vektah/gqlparser/v2 v2.2.0
-	go.mongodb.org/mongo-driver v1.6.0
+	go.mongodb.org/mongo-driver v1.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )
