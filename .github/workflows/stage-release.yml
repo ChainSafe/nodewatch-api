@@ -1,0 +1,27 @@
+name: Release Staging
+# on:
+#   push:
+#     branches:
+#       - 'main'
+
+# Testing
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: Release Staging
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: docker://ghcr.io/kciter/aws-ecr-action:latest
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          region: ${{ secrets.STAGE_AWS_REGION }}
+          repo: ${{ secrets.ECR_REPOSITORY }}
+          tags: stage
+          create_repo: false
