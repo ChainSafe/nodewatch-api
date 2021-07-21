@@ -1,18 +1,19 @@
-FROM  golang:1.16-alpine3.13 AS builder
+FROM golang:1.16-alpine AS builder
 
+RUN apk add build-base
 WORKDIR /code
-
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
 # build the binary
 ADD . .
-RUN env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /crawler cmd/main.go
+RUN env GOOS=linux GOARCH=amd64 go build -o /crawler cmd/main.go
 
 # final stage
 FROM alpine:3.14.0
 
+RUN apk add build-base
 ARG env=dev
 
 RUN apk add curl
