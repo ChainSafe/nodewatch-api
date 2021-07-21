@@ -10,7 +10,7 @@ require (
 	github.com/libp2p/go-libp2p-noise v0.2.0
 	github.com/libp2p/go-tcp-transport v0.2.4
 	github.com/multiformats/go-multiaddr v0.3.3
-	github.com/protolambda/zrnt v0.16.6
+	github.com/protolambda/zrnt v0.17.0
 	github.com/protolambda/ztyp v0.1.8
 	github.com/vektah/gqlparser/v2 v2.2.0
 	go.mongodb.org/mongo-driver v1.7.0
