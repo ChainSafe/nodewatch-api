@@ -25,7 +25,7 @@ jobs:
           repo: ${{ secrets.ECR_REPOSITORY }}
           tags: stage
           create_repo: false
-      - run: 'echo "$STAGE_HELM_VALUES" > /helm/values.yaml'
+      - run: 'echo "$STAGE_HELM_VALUES" > helm/values.yaml'
         shell: bash
         env:
           STAGE_HELM_VALUES: ${{secrets.STAGE_HELM_VALUES}}
