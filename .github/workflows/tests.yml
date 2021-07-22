@@ -33,7 +33,7 @@ jobs:
           make test
 
   lint:
-    name: Lint
+    name: Lint & License Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -42,3 +42,5 @@ jobs:
         with:
           version: v1.36
           args: --timeout=5m
+      - name: License Check
+        run: make license-check
