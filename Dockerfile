@@ -18,6 +18,7 @@ ARG env=dev
 
 RUN apk add curl
 COPY --from=builder /crawler /
-COPY cmd/config/config.$env.yaml /
+COPY cmd/config/config.$env.yaml /config.yaml
 
 RUN chmod +x /crawler
+ENTRYPOINT ["/crawler", "-p", "/config.yaml"]

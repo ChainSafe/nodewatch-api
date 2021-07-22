@@ -25,3 +25,13 @@ jobs:
           repo: ${{ secrets.ECR_REPOSITORY }}
           tags: stage
           create_repo: false
+      - run: 'echo "$STAGE_HELM_VALUES" > /helm/values.yaml'
+        shell: bash
+        env:
+          STAGE_HELM_VALUES: ${{secrets.STAGE_HELM_VALUES}}
+      - name: helm deploy
+        uses: koslib/helm-eks-action@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.STAGE_KUBE_CONFIG_DATA }}
+        with:
+          command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml crawler helm/crawler
