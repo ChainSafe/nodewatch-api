@@ -32,15 +32,25 @@ jobs:
         shell: bash
         env:
           STAGE_HELM_VALUES: ${{secrets.STAGE_HELM_VALUES}}
-      - name: AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      # - name: AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ secrets.STAGE_AWS_REGION }}
+      # - name: helm deploy
+      #   uses: koslib/helm-eks-action@master
+      #   env:
+      #     KUBE_CONFIG_DATA: ${{ secrets.STAGE_KUBE_CONFIG_DATA }}
+      #   with:
+      #     command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml crawler helm/crawler
+      - uses: craftech-io/eks-helm-deploy-action@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.STAGE_AWS_REGION }}
-      - name: helm deploy
-        uses: koslib/helm-eks-action@master
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.STAGE_KUBE_CONFIG_DATA }}
-        with:
-          command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml crawler helm/crawler
+          cluster-name: ${{ secrets.STAGE_CLUSTER_NAME }}
+          config-files: helm/values.yaml
+          chart-path: helm/crawler
+          namespace: ${{ secrets.STAGE_KUBE_NAMESPACE }}
+          name: crawler
