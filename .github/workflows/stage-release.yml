@@ -2,15 +2,10 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 
 name: Release Staging
-# on:
-#   push:
-#     branches:
-#       - 'main'
-
-# Testing
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - 'main'
 
 jobs:
   build:
