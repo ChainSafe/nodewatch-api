@@ -1,17 +1,16 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
-
-{{- if .Values.ingress.enabled -}}
-{{- $fullName := include "crawler.fullname" . -}}
+{{- if .Values.ingress.enabled }}
+{{- $fullName := include "crawler.fullname" . }}
 {{- $svcPort := .Values.service.port -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
 apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
+{{- else }}
 apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ include "crawler.fullname" . }}
   labels:
     {{- include "crawler.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -37,8 +36,8 @@ spec:
           {{- range .paths }}
           - path: {{ .path }}
             backend:
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
+              serviceName: {{ .backend.serviceName }}
+              servicePort: {{ .backend.servicePort }}
           {{- end }}
     {{- end }}
   {{- end }}
