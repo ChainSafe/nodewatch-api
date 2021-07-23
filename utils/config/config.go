@@ -22,9 +22,10 @@ type Configuration struct {
 
 // Server holds data necessary for server configuration
 type Server struct {
-	Port         string `yaml:"port,omitempty"`
-	ReadTimeout  int    `yaml:"read_timeout_seconds,omitempty"`
-	WriteTimeout int    `yaml:"write_timeout_seconds,omitempty"`
+	Port         string   `yaml:"port,omitempty"`
+	ReadTimeout  int      `yaml:"read_timeout_seconds,omitempty"`
+	WriteTimeout int      `yaml:"write_timeout_seconds,omitempty"`
+	CORS         []string `yaml:"cors,omitempty"`
 }
 
 // Database is a MongoDB config

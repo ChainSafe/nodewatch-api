@@ -6,6 +6,7 @@ server:
   debug: true
   read_timeout_seconds: 360
   write_timeout_seconds: 360
+  cors: ["*"]
 
 database:
   request_timeout_sec: 5
