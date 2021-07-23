@@ -1,0 +1,18 @@
+# Copyright 2020 ChainSafe Systems
+# SPDX-License-Identifier: LGPL-3.0-only
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "crawler.fullname" . }}
+  labels:
+    {{- include "crawler.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "crawler.selectorLabels" . | nindent 4 }}

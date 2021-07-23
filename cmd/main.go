@@ -6,6 +6,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -43,13 +44,14 @@ func main() {
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(peerStore)}))
 
-	// TODO: make playground accessible only in Dev mode
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
-
 	router := http.NewServeMux()
+	// TODO: make playground accessible only in Dev mode
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
+	// TODO: setup proper status handler
+	router.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "{ \"status\": \"up\" }")
+	})
 
 	server.Start(context.TODO(), cfg.Server, router)
 }

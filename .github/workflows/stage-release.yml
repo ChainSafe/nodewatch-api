@@ -1,0 +1,41 @@
+# Copyright 2020 ChainSafe Systems
+# SPDX-License-Identifier: LGPL-3.0-only
+
+name: Release Staging
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build:
+    name: Release Staging
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: kciter/aws-ecr-action@v3
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          region: ${{ secrets.STAGE_AWS_REGION }}
+          repo: ${{ secrets.ECR_REPOSITORY }}
+          tags: stage
+          create_repo: false
+      - run: 'echo "$STAGE_HELM_VALUES" > helm/values.yaml'
+        shell: bash
+        env:
+          STAGE_HELM_VALUES: ${{secrets.STAGE_HELM_VALUES}}
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.STAGE_AWS_REGION }}
+      - name: helm deploy
+        uses: koslib/helm-eks-action@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.STAGE_KUBE_CONFIG_DATA }}
+        with:
+          command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml crawler helm/crawler

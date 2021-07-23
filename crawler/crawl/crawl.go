@@ -170,7 +170,7 @@ func (c *crawler) savePeerInformation(ctx context.Context, peer *models.Peer) {
 
 func (c *crawler) updatePeerInformation(ctx context.Context, new *models.Peer, old *models.Peer) {
 	// TODO: update the IP  details after certain interval
-	if new.IP != old.IP {
+	if new.IP != old.IP || old.GeoLocation == nil {
 		geoLoc, err := c.ipResolver.GetGeoLocation(ctx, new.IP)
 		if err != nil {
 			log.Error("unable to get geo information", log.Ctx{
@@ -179,8 +179,9 @@ func (c *crawler) updatePeerInformation(ctx context.Context, new *models.Peer, o
 			})
 			return
 		}
-
 		new.SetGeoLocation(geoLoc)
+	} else {
+		new.SetGeoLocation(old.GeoLocation)
 	}
 
 	err := c.peerStore.Update(ctx, new)

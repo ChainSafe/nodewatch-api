@@ -35,7 +35,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: '/crawler -p config.dev.yaml'
     env_file:
       - .env
     ports:
