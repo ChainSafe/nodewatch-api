@@ -11,15 +11,24 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/rs/cors"
 )
 
 // Start starts the service
 func Start(ctx context.Context, cfg *config.Server, handler http.Handler) {
+	cors := cors.New(cors.Options{
+		AllowedOrigins:   cfg.CORS,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"},
+		ExposedHeaders:   []string{"Content-Length", "Content-Type", "Content-Disposition"},
+		AllowCredentials: true,
+	})
+
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
 		ReadTimeout:  time.Duration(cfg.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(cfg.WriteTimeout) * time.Second,
-		Handler:      handler,
+		Handler:      cors.Handler(handler),
 	}
 
 	go func() {
