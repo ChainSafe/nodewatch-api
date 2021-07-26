@@ -21,4 +21,5 @@ type Provider interface {
 	AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error)
+	AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error)
 }

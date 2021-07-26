@@ -157,10 +157,9 @@ func (c *crawler) savePeerInformation(ctx context.Context, peer *models.Peer) {
 			"error":   err,
 			"ip_addr": peer.IP,
 		})
-		return
+	} else {
+		peer.SetGeoLocation(geoLoc)
 	}
-
-	peer.SetGeoLocation(geoLoc)
 
 	err = c.peerStore.Create(ctx, peer)
 	if err != nil {
@@ -177,9 +176,9 @@ func (c *crawler) updatePeerInformation(ctx context.Context, new *models.Peer, o
 				"error":   err,
 				"ip_addr": new.IP,
 			})
-			return
+		} else {
+			new.SetGeoLocation(geoLoc)
 		}
-		new.SetGeoLocation(geoLoc)
 	} else {
 		new.SetGeoLocation(old.GeoLocation)
 	}
