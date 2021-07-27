@@ -71,6 +71,27 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 	return res, nil
 }
 
+// Todo: accept filter and find options to get limited information
+func (s *mongoStore) ViewAll(ctx context.Context) ([]*models.Peer, error) {
+	var peers []*models.Peer
+	cursor, err := s.coll.Find(ctx, bson.D{{}})
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		peer := new(models.Peer)
+		err := cursor.Decode(peer)
+		if err != nil {
+			return nil, err
+		}
+
+		peers = append(peers, peer)
+	}
+	return peers, nil
+}
+
 type aggregateData struct {
 	ID    string `json:"_id" bson:"_id"`
 	Count int    `json:"count" bson:"count"`
