@@ -14,7 +14,7 @@ import (
 	"eth2-crawler/crawler"
 	"eth2-crawler/graph"
 	"eth2-crawler/graph/generated"
-	ipResolver "eth2-crawler/resolver"
+	"eth2-crawler/resolver/ipdata"
 	mongoStore "eth2-crawler/store/mongo"
 	"eth2-crawler/utils/config"
 	"eth2-crawler/utils/server"
@@ -37,7 +37,10 @@ func main() {
 		log.Fatalf("error Initializing the peer store: %s", err.Error())
 	}
 
-	resolverService := ipResolver.New(cfg.Resolver.APIKey, time.Duration(cfg.Resolver.Timeout)*time.Second)
+	resolverService, err := ipdata.New(cfg.Resolver.APIKey, time.Duration(cfg.Resolver.Timeout)*time.Second)
+	if err != nil {
+		log.Fatalf("error Initializing the ip resolver: %s", err.Error())
+	}
 
 	// TODO collect config from a config files or from command args and pass to Start()
 	go crawler.Start(peerStore, resolverService)

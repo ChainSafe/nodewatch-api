@@ -161,6 +161,40 @@ func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.Aggregat
 	return result, nil
 }
 
+func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error) {
+	query := mongo.Pipeline{
+		bson.D{
+			// avoid aggregation of entries without geolocation information
+			{Key: "$match", Value: bson.D{
+				{Key: "geolocation", Value: bson.D{{Key: "$ne", Value: nil}}},
+			}},
+		},
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: "$geolocation.asn.type"},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			}},
+		},
+	}
+	cursor, err := s.coll.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*models.AggregateData{}
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		data := new(aggregateData)
+		err := cursor.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, &models.AggregateData{Name: data.ID, Count: data.Count})
+	}
+	return result, nil
+}
+
 // New creates new instance of Entry Store based on MongoDB
 func New(cfg *config.Database) (store.Provider, error) {
 	timeout := time.Duration(cfg.Timeout) * time.Second

@@ -27,15 +27,36 @@ type UserAgent struct {
 	OS      string `json:"os" bson:"os"`
 }
 
+// UsageType defines the ASN usage type
+type UsageType string
+
+const (
+	UsageTypeNil         UsageType = ""
+	UsageTypeHosting     UsageType = "hosting"
+	UsageTypeResidential UsageType = "residential"
+	UsageTypeBusiness    UsageType = "business"
+	UsageTypeEducation   UsageType = "education"
+	UsageTypeGovernment  UsageType = "government"
+	UsageTypeMilitary    UsageType = "military"
+)
+
+// ASN holds the Autonomous system details
+type ASN struct {
+	ID     string    `json:"id" bson:"id"`
+	Name   string    `json:"name" bson:"name"`
+	Domain string    `json:"domain" bson:"domain"`
+	Route  string    `json:"route" bson:"route"`
+	Type   UsageType `json:"type" bson:"type"`
+}
+
 // GeoLocation holds peer's geo location related info
 type GeoLocation struct {
-	ISP          string `json:"isp" bson:"isp"`
-	Organization string `json:"organization" bson:"organization"`
-	Country      string `json:"country_name" bson:"country"`
-	State        string `json:"state" bson:"state"`
-	City         string `json:"city" bson:"city"`
-	Latitude     string `json:"latitude" bson:"latitude"`
-	Longitude    string `json:"longitude" bson:"longitude"`
+	ASN       ASN     `json:"asn" nson:"asn"`
+	Country   string  `json:"country_name" bson:"country"`
+	State     string  `json:"state" bson:"state"`
+	City      string  `json:"city" bson:"city"`
+	Latitude  float64 `json:"latitude" bson:"latitude"`
+	Longitude float64 `json:"longitude" bson:"longitude"`
 }
 
 // Peer holds all information of a eth2 peer
