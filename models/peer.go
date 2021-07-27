@@ -23,7 +23,6 @@ import (
 // ClientName defines the type for eth2 client name
 type ClientName string
 
-// all eth2-clients
 const (
 	PrysmClient      ClientName = "prysm"
 	LighthouseClient ClientName = "lighthouse"
@@ -35,11 +34,22 @@ const (
 	OthersClient     ClientName = "others"
 )
 
+// OS defines the type of os of agent
+
+type OS string
+
+const (
+	OSLinux   OS = "linux"
+	OSMAC     OS = "mac"
+	OSWindows OS = "windows"
+	OSUnknown OS = "unknown"
+)
+
 // UserAgent holds peer's client related info
 type UserAgent struct {
 	Name    ClientName `json:"name" bson:"name"`
 	Version string     `json:"version" bson:"version"`
-	OS      string     `json:"os" bson:"os"`
+	OS      OS         `json:"os" bson:"os"`
 }
 
 // UsageType defines the ASN usage type
@@ -188,11 +198,14 @@ func (p *Peer) SetUserAgent(ag string) {
 	// update the version and os to standard form
 	userAgent.Version = strings.TrimRight(userAgent.Version, "-")
 
-	var validOS = []string{"Linux", "Windows", "Mac"}
+	var validOS = []OS{OSLinux, OSMAC, OSWindows}
 	for _, vos := range validOS {
-		if strings.Contains(strings.ToLower(os), strings.ToLower(vos)) {
-			userAgent.OS = os
+		if strings.Contains(strings.ToLower(os), strings.ToLower(string(vos))) {
+			userAgent.OS = vos
 		}
+	}
+	if userAgent.OS == "" {
+		userAgent.OS = OSUnknown
 	}
 	p.UserAgent = userAgent
 }
