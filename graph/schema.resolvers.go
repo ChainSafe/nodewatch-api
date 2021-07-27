@@ -1,6 +1,3 @@
-// Copyright 2021 ChainSafe Systems
-// SPDX-License-Identifier: LGPL-3.0-only
-
 package graph
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
@@ -10,7 +7,6 @@ import (
 	"context"
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
-	"eth2-crawler/store"
 )
 
 func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.AggregateData, error) {
@@ -77,15 +73,29 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	return result, nil
 }
 
-// Query returns generated.QueryResolver implementation.
-func (r *Resolver) Query() generated.QueryResolver {
-	return &queryResolver{
-		Resolver:  r,
-		peerStore: r.peerStore,
+func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error) {
+	peers, err := r.peerStore.ViewAll(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	result := []*model.HeatmapData{}
+	for i := range peers {
+		if peers[i].GeoLocation != nil &&
+			(peers[i].GeoLocation.Latitude != 0 ||
+				peers[i].GeoLocation.Longitude != 0) {
+			result = append(result, &model.HeatmapData{
+				NetworkType: string(peers[i].GeoLocation.ASN.Type),
+				ClientType:  peers[i].UserAgent.Name,
+				Latitude:    peers[i].GeoLocation.Latitude,
+				Longitude:   peers[i].GeoLocation.Longitude,
+			})
+		}
+	}
+	return result, nil
 }
 
-type queryResolver struct {
-	*Resolver
-	peerStore store.Provider
-}
+// Query returns generated.QueryResolver implementation.
+func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
+
+type queryResolver struct{ *Resolver }

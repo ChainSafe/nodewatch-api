@@ -47,22 +47,12 @@ type ComplexityRoot struct {
 		Name  func(childComplexity int) int
 	}
 
-	Node struct {
-		AgentName     func(childComplexity int) int
-		AgentVersion  func(childComplexity int) int
-		Attnets       func(childComplexity int) int
-		City          func(childComplexity int) int
-		Country       func(childComplexity int) int
-		Enode         func(childComplexity int) int
-		Eth2          func(childComplexity int) int
-		ID            func(childComplexity int) int
-		IP4           func(childComplexity int) int
-		IP6           func(childComplexity int) int
-		IsConnectable func(childComplexity int) int
-		Isp           func(childComplexity int) int
-		LastConnected func(childComplexity int) int
-		TCPPort       func(childComplexity int) int
-		UDPPort       func(childComplexity int) int
+	HeatmapData struct {
+		ClientType  func(childComplexity int) int
+		Latitude    func(childComplexity int) int
+		Longitude   func(childComplexity int) int
+		NetworkType func(childComplexity int) int
+		SyncStatus  func(childComplexity int) int
 	}
 
 	Query struct {
@@ -70,6 +60,7 @@ type ComplexityRoot struct {
 		AggregateByCountry         func(childComplexity int) int
 		AggregateByNetwork         func(childComplexity int) int
 		AggregateByOperatingSystem func(childComplexity int) int
+		GetHeatmapData             func(childComplexity int) int
 	}
 }
 
@@ -78,6 +69,7 @@ type QueryResolver interface {
 	AggregateByCountry(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error)
+	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
 }
 
 type executableSchema struct {
@@ -109,110 +101,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AggregateData.Name(childComplexity), true
 
-	case "Node.agentName":
-		if e.complexity.Node.AgentName == nil {
+	case "HeatmapData.clientType":
+		if e.complexity.HeatmapData.ClientType == nil {
 			break
 		}
 
-		return e.complexity.Node.AgentName(childComplexity), true
+		return e.complexity.HeatmapData.ClientType(childComplexity), true
 
-	case "Node.agentVersion":
-		if e.complexity.Node.AgentVersion == nil {
+	case "HeatmapData.latitude":
+		if e.complexity.HeatmapData.Latitude == nil {
 			break
 		}
 
-		return e.complexity.Node.AgentVersion(childComplexity), true
+		return e.complexity.HeatmapData.Latitude(childComplexity), true
 
-	case "Node.attnets":
-		if e.complexity.Node.Attnets == nil {
+	case "HeatmapData.longitude":
+		if e.complexity.HeatmapData.Longitude == nil {
 			break
 		}
 
-		return e.complexity.Node.Attnets(childComplexity), true
+		return e.complexity.HeatmapData.Longitude(childComplexity), true
 
-	case "Node.city":
-		if e.complexity.Node.City == nil {
+	case "HeatmapData.networkType":
+		if e.complexity.HeatmapData.NetworkType == nil {
 			break
 		}
 
-		return e.complexity.Node.City(childComplexity), true
+		return e.complexity.HeatmapData.NetworkType(childComplexity), true
 
-	case "Node.country":
-		if e.complexity.Node.Country == nil {
+	case "HeatmapData.syncStatus":
+		if e.complexity.HeatmapData.SyncStatus == nil {
 			break
 		}
 
-		return e.complexity.Node.Country(childComplexity), true
-
-	case "Node.enode":
-		if e.complexity.Node.Enode == nil {
-			break
-		}
-
-		return e.complexity.Node.Enode(childComplexity), true
-
-	case "Node.eth2":
-		if e.complexity.Node.Eth2 == nil {
-			break
-		}
-
-		return e.complexity.Node.Eth2(childComplexity), true
-
-	case "Node.id":
-		if e.complexity.Node.ID == nil {
-			break
-		}
-
-		return e.complexity.Node.ID(childComplexity), true
-
-	case "Node.ip4":
-		if e.complexity.Node.IP4 == nil {
-			break
-		}
-
-		return e.complexity.Node.IP4(childComplexity), true
-
-	case "Node.ip6":
-		if e.complexity.Node.IP6 == nil {
-			break
-		}
-
-		return e.complexity.Node.IP6(childComplexity), true
-
-	case "Node.isConnectable":
-		if e.complexity.Node.IsConnectable == nil {
-			break
-		}
-
-		return e.complexity.Node.IsConnectable(childComplexity), true
-
-	case "Node.isp":
-		if e.complexity.Node.Isp == nil {
-			break
-		}
-
-		return e.complexity.Node.Isp(childComplexity), true
-
-	case "Node.lastConnected":
-		if e.complexity.Node.LastConnected == nil {
-			break
-		}
-
-		return e.complexity.Node.LastConnected(childComplexity), true
-
-	case "Node.tcpPort":
-		if e.complexity.Node.TCPPort == nil {
-			break
-		}
-
-		return e.complexity.Node.TCPPort(childComplexity), true
-
-	case "Node.udpPort":
-		if e.complexity.Node.UDPPort == nil {
-			break
-		}
-
-		return e.complexity.Node.UDPPort(childComplexity), true
+		return e.complexity.HeatmapData.SyncStatus(childComplexity), true
 
 	case "Query.aggregateByAgentName":
 		if e.complexity.Query.AggregateByAgentName == nil {
@@ -241,6 +163,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.AggregateByOperatingSystem(childComplexity), true
+
+	case "Query.getHeatmapData":
+		if e.complexity.Query.GetHeatmapData == nil {
+			break
+		}
+
+		return e.complexity.Query.GetHeatmapData(childComplexity), true
 
 	}
 	return 0, false
@@ -292,27 +221,17 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schema.graphqls", Input: `type Node {
-  id: String!
-  ip4: String
-  ip6: String
-  tcpPort: Int
-  udpPort: Int
-  attnets: String
-  eth2: String!
-  enode: String!
-  agentName: String!
-  agentVersion: String!
-  country: String
-  city: String
-  isp: String
-  isConnectable: Boolean!
-  lastConnected: Int
-}
-
-type AggregateData {
+	{Name: "graph/schema.graphqls", Input: `type AggregateData {
   name: String!
   count: Int!
+}
+
+type HeatmapData {
+  networkType: String!
+	clientType:  String!
+	syncStatus:  String!
+	latitude:    Float!
+	longitude:   Float!
 }
 
 type Query {
@@ -320,6 +239,7 @@ type Query {
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
+  getHeatmapData: [HeatmapData!]!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -451,7 +371,7 @@ func (ec *executionContext) _AggregateData_count(ctx context.Context, field grap
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_id(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _HeatmapData_networkType(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -459,7 +379,7 @@ func (ec *executionContext) _Node_id(ctx context.Context, field graphql.Collecte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Node",
+		Object:     "HeatmapData",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -469,7 +389,7 @@ func (ec *executionContext) _Node_id(ctx context.Context, field graphql.Collecte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.NetworkType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -486,7 +406,7 @@ func (ec *executionContext) _Node_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_ip4(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _HeatmapData_clientType(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -494,7 +414,7 @@ func (ec *executionContext) _Node_ip4(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Node",
+		Object:     "HeatmapData",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -504,167 +424,7 @@ func (ec *executionContext) _Node_ip4(ctx context.Context, field graphql.Collect
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.IP4, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_ip6(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IP6, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_tcpPort(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TCPPort, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_udpPort(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UDPPort, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_attnets(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Attnets, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_eth2(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Eth2, nil
+		return obj.ClientType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -681,7 +441,7 @@ func (ec *executionContext) _Node_eth2(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_enode(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _HeatmapData_syncStatus(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -689,7 +449,7 @@ func (ec *executionContext) _Node_enode(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Node",
+		Object:     "HeatmapData",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -699,7 +459,7 @@ func (ec *executionContext) _Node_enode(ctx context.Context, field graphql.Colle
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Enode, nil
+		return obj.SyncStatus, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -716,7 +476,7 @@ func (ec *executionContext) _Node_enode(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_agentName(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _HeatmapData_latitude(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -724,7 +484,7 @@ func (ec *executionContext) _Node_agentName(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Node",
+		Object:     "HeatmapData",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -734,7 +494,7 @@ func (ec *executionContext) _Node_agentName(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AgentName, nil
+		return obj.Latitude, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -746,12 +506,12 @@ func (ec *executionContext) _Node_agentName(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Node_agentVersion(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _HeatmapData_longitude(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -759,7 +519,7 @@ func (ec *executionContext) _Node_agentVersion(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Node",
+		Object:     "HeatmapData",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -769,7 +529,7 @@ func (ec *executionContext) _Node_agentVersion(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AgentVersion, nil
+		return obj.Longitude, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -781,172 +541,9 @@ func (ec *executionContext) _Node_agentVersion(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_country(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Country, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_city(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.City, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_isp(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Isp, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_isConnectable(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsConnectable, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Node_lastConnected(ctx context.Context, field graphql.CollectedField, obj *model.Node) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Node",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastConnected, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_aggregateByAgentName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1087,6 +684,41 @@ func (ec *executionContext) _Query_aggregateByNetwork(ctx context.Context, field
 	res := resTmp.([]*model.AggregateData)
 	fc.Result = res
 	return ec.marshalNAggregateData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐAggregateDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getHeatmapData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetHeatmapData(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.HeatmapData)
+	fc.Result = res
+	return ec.marshalNHeatmapData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐHeatmapDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2287,65 +1919,42 @@ func (ec *executionContext) _AggregateData(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var nodeImplementors = []string{"Node"}
+var heatmapDataImplementors = []string{"HeatmapData"}
 
-func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj *model.Node) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, nodeImplementors)
+func (ec *executionContext) _HeatmapData(ctx context.Context, sel ast.SelectionSet, obj *model.HeatmapData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, heatmapDataImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Node")
-		case "id":
-			out.Values[i] = ec._Node_id(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("HeatmapData")
+		case "networkType":
+			out.Values[i] = ec._HeatmapData_networkType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "ip4":
-			out.Values[i] = ec._Node_ip4(ctx, field, obj)
-		case "ip6":
-			out.Values[i] = ec._Node_ip6(ctx, field, obj)
-		case "tcpPort":
-			out.Values[i] = ec._Node_tcpPort(ctx, field, obj)
-		case "udpPort":
-			out.Values[i] = ec._Node_udpPort(ctx, field, obj)
-		case "attnets":
-			out.Values[i] = ec._Node_attnets(ctx, field, obj)
-		case "eth2":
-			out.Values[i] = ec._Node_eth2(ctx, field, obj)
+		case "clientType":
+			out.Values[i] = ec._HeatmapData_clientType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "enode":
-			out.Values[i] = ec._Node_enode(ctx, field, obj)
+		case "syncStatus":
+			out.Values[i] = ec._HeatmapData_syncStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "agentName":
-			out.Values[i] = ec._Node_agentName(ctx, field, obj)
+		case "latitude":
+			out.Values[i] = ec._HeatmapData_latitude(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "agentVersion":
-			out.Values[i] = ec._Node_agentVersion(ctx, field, obj)
+		case "longitude":
+			out.Values[i] = ec._HeatmapData_longitude(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "country":
-			out.Values[i] = ec._Node_country(ctx, field, obj)
-		case "city":
-			out.Values[i] = ec._Node_city(ctx, field, obj)
-		case "isp":
-			out.Values[i] = ec._Node_isp(ctx, field, obj)
-		case "isConnectable":
-			out.Values[i] = ec._Node_isConnectable(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "lastConnected":
-			out.Values[i] = ec._Node_lastConnected(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2423,6 +2032,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_aggregateByNetwork(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getHeatmapData":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getHeatmapData(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2750,6 +2373,68 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloat(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloat(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNHeatmapData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐHeatmapDataᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.HeatmapData) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNHeatmapData2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐHeatmapData(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNHeatmapData2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐHeatmapData(ctx context.Context, sel ast.SelectionSet, v *model.HeatmapData) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._HeatmapData(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3031,21 +2716,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalInt(*v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
