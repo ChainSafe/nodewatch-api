@@ -3,9 +3,18 @@ type AggregateData {
   count: Int!
 }
 
+type HeatmapData {
+  networkType: String!
+	clientType:  String!
+	syncStatus:  String!
+	latitude:    Float!
+	longitude:   Float!
+}
+
 type Query {
   aggregateByAgentName: [AggregateData!]!
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
+  getHeatmapData: [HeatmapData!]!
 }

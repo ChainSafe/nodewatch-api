@@ -18,7 +18,10 @@ type Provider interface {
 	Update(ctx context.Context, peer *models.Peer) error
 	Upsert(ctx context.Context, peer *models.Peer) error
 	View(ctx context.Context, peerID peer.ID) (*models.Peer, error)
+	// Todo: accept filter and find options to get limited information
+	ViewAll(ctx context.Context) ([]*models.Peer, error)
 	AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error)
+	AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error)
 }

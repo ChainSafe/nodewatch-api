@@ -71,6 +71,27 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 	return res, nil
 }
 
+// Todo: accept filter and find options to get limited information
+func (s *mongoStore) ViewAll(ctx context.Context) ([]*models.Peer, error) {
+	var peers []*models.Peer
+	cursor, err := s.coll.Find(ctx, bson.D{{}})
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		peer := new(models.Peer)
+		err := cursor.Decode(peer)
+		if err != nil {
+			return nil, err
+		}
+
+		peers = append(peers, peer)
+	}
+	return peers, nil
+}
+
 type aggregateData struct {
 	ID    string `json:"_id" bson:"_id"`
 	Count int    `json:"count" bson:"count"`
@@ -138,6 +159,40 @@ func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.Aggregat
 		bson.D{
 			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: "$geolocation.country"},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			}},
+		},
+	}
+	cursor, err := s.coll.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*models.AggregateData{}
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		data := new(aggregateData)
+		err := cursor.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, &models.AggregateData{Name: data.ID, Count: data.Count})
+	}
+	return result, nil
+}
+
+func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error) {
+	query := mongo.Pipeline{
+		bson.D{
+			// avoid aggregation of entries without geolocation information
+			{Key: "$match", Value: bson.D{
+				{Key: "geolocation", Value: bson.D{{Key: "$ne", Value: nil}}},
+			}},
+		},
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: "$geolocation.asn.type"},
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},

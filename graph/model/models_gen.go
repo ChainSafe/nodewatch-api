@@ -7,20 +7,10 @@ type AggregateData struct {
 	Count int    `json:"count"`
 }
 
-type Node struct {
-	ID            string  `json:"id"`
-	IP4           *string `json:"ip4"`
-	IP6           *string `json:"ip6"`
-	TCPPort       *int    `json:"tcpPort"`
-	UDPPort       *int    `json:"udpPort"`
-	Attnets       *string `json:"attnets"`
-	Eth2          string  `json:"eth2"`
-	Enode         string  `json:"enode"`
-	AgentName     string  `json:"agentName"`
-	AgentVersion  string  `json:"agentVersion"`
-	Country       *string `json:"country"`
-	City          *string `json:"city"`
-	Isp           *string `json:"isp"`
-	IsConnectable bool    `json:"isConnectable"`
-	LastConnected *int    `json:"lastConnected"`
+type HeatmapData struct {
+	NetworkType string  `json:"networkType"`
+	ClientType  string  `json:"clientType"`
+	SyncStatus  string  `json:"syncStatus"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
 }
