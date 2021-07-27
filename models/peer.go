@@ -20,11 +20,26 @@ import (
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
+// ClientName defines the type for eth2 client name
+type ClientName string
+
+// all eth2-clients
+const (
+	PrysmClient      ClientName = "prysm"
+	LighthouseClient ClientName = "lighthouse"
+	TekuClient       ClientName = "teku"
+	CortexClient     ClientName = "cortex"
+	LodestarClient   ClientName = "lodestar"
+	NimbusClient     ClientName = "nimbus"
+	TrinityClient    ClientName = "trinity"
+	OthersClient     ClientName = "others"
+)
+
 // UserAgent holds peer's client related info
 type UserAgent struct {
-	Name    string `json:"name" bson:"name"`
-	Version string `json:"version" bson:"version"`
-	OS      string `json:"os" bson:"os"`
+	Name    ClientName `json:"name" bson:"name"`
+	Version string     `json:"version" bson:"version"`
+	OS      string     `json:"os" bson:"os"`
 }
 
 // GeoLocation holds peer's geo location related info
@@ -99,18 +114,64 @@ func (p *Peer) SetProtocolVersion(pv string) {
 	p.ProtocolVersion = pv
 }
 
-// SetAgentVersion sets peer's agent version
-func (p *Peer) SetAgentVersion(ag string) {
+// SetUserAgent sets peer's agent info
+func (p *Peer) SetUserAgent(ag string) {
 	// split the ag based on this format. might not be identical with each type of node
 	// ag = Name/Version/OS(or git commit hash for Prysm)
+
 	userAgent := new(UserAgent)
 	parts := strings.Split(ag, "/")
-	userAgent.Name = parts[0]
-	if len(parts) > 1 {
-		userAgent.Version = parts[1]
+
+	allClients := []ClientName{
+		PrysmClient,
+		LighthouseClient,
+		TekuClient,
+		CortexClient,
+		LodestarClient,
+		NimbusClient,
+		TrinityClient,
+		OthersClient,
 	}
-	if len(parts) > 2 {
-		userAgent.OS = parts[2]
+
+	for _, name := range allClients {
+		if strings.EqualFold(string(name), parts[0]) {
+			userAgent.Name = name
+			break
+		}
+	}
+	if userAgent.Name == "" {
+		userAgent.Name = OthersClient
+	}
+
+	var os = ""
+	switch userAgent.Name {
+	case TekuClient:
+		if len(parts) > 2 {
+			userAgent.Version = parts[2]
+		}
+		if len(parts) > 3 {
+			os = parts[3]
+		}
+	case PrysmClient:
+		if len(parts) > 1 {
+			userAgent.Version = parts[1]
+		}
+	default:
+		if len(parts) > 1 {
+			userAgent.Version = parts[1]
+		}
+		if len(parts) > 2 {
+			os = parts[2]
+		}
+	}
+	// update the version and os to standard form
+	userAgent.Version = strings.TrimRight(userAgent.Version, "-")
+
+	var validOS = []string{"Linux", "Windows", "Mac"}
+	for _, vos := range validOS {
+		if strings.Contains(strings.ToLower(os), strings.ToLower(vos)) {
+			userAgent.OS = os
+		}
 	}
 	p.UserAgent = userAgent
 }

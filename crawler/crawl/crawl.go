@@ -115,7 +115,7 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 		if err != nil {
 			continue
 		} else {
-			peer.SetAgentVersion(ag)
+			peer.SetUserAgent(ag)
 		}
 		pv, err = c.host.GetProtocolVersion(peer.ID)
 		if err != nil {

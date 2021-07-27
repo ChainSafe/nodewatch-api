@@ -19,7 +19,7 @@ services:
       - mongo_data:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USR:-mongoUsr}
-      MONGO_INITDB_ROOT_PASSWORD: ${CSF_MONGODB_PWD:-mongoPwd}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PWD:-mongoPwd}
     networks:
       - crawler_net
     healthcheck:
@@ -37,6 +37,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
+    environment:
+      MONGODB_URI: mongodb://${MONGODB_USR:-mongoUsr}:${MONGODB_PWD:-mongoPwd}@mongo-db:27017
     ports:
       - "8080:8080/tcp"
     depends_on:
