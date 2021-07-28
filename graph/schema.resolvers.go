@@ -89,7 +89,7 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 				peers[i].GeoLocation.Longitude != 0) {
 			result = append(result, &model.HeatmapData{
 				NetworkType: string(peers[i].GeoLocation.ASN.Type),
-				ClientType:  peers[i].UserAgent.Name,
+				ClientType:  string(peers[i].UserAgent.Name),
 				Latitude:    peers[i].GeoLocation.Latitude,
 				Longitude:   peers[i].GeoLocation.Longitude,
 			})
