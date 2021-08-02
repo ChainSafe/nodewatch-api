@@ -49,7 +49,6 @@ const (
 
 // UserAgent holds peer's client related info
 type UserAgent struct {
-	Raw     string     `json:"raw" bson:"raw"`
 	Name    ClientName `json:"name" bson:"name"`
 	Version string     `json:"version" bson:"version"`
 	OS      OS         `json:"os" bson:"os"`
@@ -154,7 +153,6 @@ func (p *Peer) SetUserAgent(ag string) {
 	// ag = Name/Version/OS(or git commit hash for Prysm)
 
 	userAgent := new(UserAgent)
-	userAgent.Raw = ag
 	parts := strings.Split(ag, "/")
 
 	allClients := []ClientName{
