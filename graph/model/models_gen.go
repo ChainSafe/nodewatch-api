@@ -7,10 +7,18 @@ type AggregateData struct {
 	Count int    `json:"count"`
 }
 
+type ClientVersionAggregation struct {
+	Client   string           `json:"client"`
+	Count    int              `json:"count"`
+	Versions []*AggregateData `json:"versions"`
+}
+
 type HeatmapData struct {
 	NetworkType string  `json:"networkType"`
 	ClientType  string  `json:"clientType"`
 	SyncStatus  string  `json:"syncStatus"`
 	Latitude    float64 `json:"latitude"`
 	Longitude   float64 `json:"longitude"`
+	City        string  `json:"city"`
+	Country     string  `json:"country"`
 }

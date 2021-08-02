@@ -1,6 +1,3 @@
-// Copyright 2021 ChainSafe Systems
-// SPDX-License-Identifier: LGPL-3.0-only
-
 package graph
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
@@ -76,6 +73,30 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	return result, nil
 }
 
+func (r *queryResolver) AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error) {
+	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*model.ClientVersionAggregation{}
+	for i := range aggregateData {
+		versions := []*model.AggregateData{}
+		for j := range aggregateData[i].Versions {
+			versions = append(versions, &model.AggregateData{
+				Name:  aggregateData[i].Versions[j].Name,
+				Count: aggregateData[i].Versions[j].Count,
+			})
+		}
+		result = append(result, &model.ClientVersionAggregation{
+			Client:   aggregateData[i].Client,
+			Count:    aggregateData[i].Count,
+			Versions: versions,
+		})
+	}
+	return result, nil
+}
+
 func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error) {
 	peers, err := r.peerStore.ViewAll(ctx)
 	if err != nil {
@@ -92,6 +113,8 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 				ClientType:  string(peers[i].UserAgent.Name),
 				Latitude:    peers[i].GeoLocation.Latitude,
 				Longitude:   peers[i].GeoLocation.Longitude,
+				City:        peers[i].GeoLocation.City,
+				Country:     peers[i].GeoLocation.Country,
 			})
 		}
 	}

@@ -24,4 +24,5 @@ type Provider interface {
 	AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error)
+	AggregateByClientVersion(ctx context.Context) ([]*models.ClientVersionAggregation, error)
 }
