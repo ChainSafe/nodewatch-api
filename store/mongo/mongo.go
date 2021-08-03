@@ -126,6 +126,62 @@ func (s *mongoStore) AggregateByAgentName(ctx context.Context) ([]*models.Aggreg
 	return result, nil
 }
 
+type clientVersionAggregation struct {
+	ID       string                  `json:"_id" bson:"_id"`
+	Count    int                     `json:"count" bson:"count"`
+	Versions []*models.AggregateData `json:"versions" bson:"versions"`
+}
+
+func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.ClientVersionAggregation, error) {
+	query := mongo.Pipeline{
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: bson.D{
+					{Key: "client", Value: "$useragent.name"},
+					{Key: "version", Value: "$useragent.version"},
+				}},
+				{Key: "versionCount", Value: bson.D{{Key: "$sum", Value: 1}}},
+			}},
+		},
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: "$_id.client"},
+				{Key: "versions", Value: bson.D{
+					{Key: "$push", Value: bson.D{
+						{Key: "name", Value: "$_id.version"},
+						{Key: "count", Value: "$versionCount"},
+					}},
+				}},
+				{Key: "count", Value: bson.D{
+					{Key: "$sum", Value: "$versionCount"},
+				}},
+			}},
+		},
+	}
+
+	cursor, err := s.coll.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*models.ClientVersionAggregation{}
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		data := new(clientVersionAggregation)
+		err := cursor.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, &models.ClientVersionAggregation{
+			Client:   data.ID,
+			Count:    data.Count,
+			Versions: data.Versions,
+		})
+	}
+	return result, nil
+}
+
 func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{

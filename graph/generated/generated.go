@@ -47,8 +47,16 @@ type ComplexityRoot struct {
 		Name  func(childComplexity int) int
 	}
 
+	ClientVersionAggregation struct {
+		Client   func(childComplexity int) int
+		Count    func(childComplexity int) int
+		Versions func(childComplexity int) int
+	}
+
 	HeatmapData struct {
+		City        func(childComplexity int) int
 		ClientType  func(childComplexity int) int
+		Country     func(childComplexity int) int
 		Latitude    func(childComplexity int) int
 		Longitude   func(childComplexity int) int
 		NetworkType func(childComplexity int) int
@@ -57,6 +65,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		AggregateByAgentName       func(childComplexity int) int
+		AggregateByClientVersion   func(childComplexity int) int
 		AggregateByCountry         func(childComplexity int) int
 		AggregateByNetwork         func(childComplexity int) int
 		AggregateByOperatingSystem func(childComplexity int) int
@@ -69,6 +78,7 @@ type QueryResolver interface {
 	AggregateByCountry(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error)
+	AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error)
 	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
 }
 
@@ -101,12 +111,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AggregateData.Name(childComplexity), true
 
+	case "ClientVersionAggregation.client":
+		if e.complexity.ClientVersionAggregation.Client == nil {
+			break
+		}
+
+		return e.complexity.ClientVersionAggregation.Client(childComplexity), true
+
+	case "ClientVersionAggregation.count":
+		if e.complexity.ClientVersionAggregation.Count == nil {
+			break
+		}
+
+		return e.complexity.ClientVersionAggregation.Count(childComplexity), true
+
+	case "ClientVersionAggregation.versions":
+		if e.complexity.ClientVersionAggregation.Versions == nil {
+			break
+		}
+
+		return e.complexity.ClientVersionAggregation.Versions(childComplexity), true
+
+	case "HeatmapData.city":
+		if e.complexity.HeatmapData.City == nil {
+			break
+		}
+
+		return e.complexity.HeatmapData.City(childComplexity), true
+
 	case "HeatmapData.clientType":
 		if e.complexity.HeatmapData.ClientType == nil {
 			break
 		}
 
 		return e.complexity.HeatmapData.ClientType(childComplexity), true
+
+	case "HeatmapData.country":
+		if e.complexity.HeatmapData.Country == nil {
+			break
+		}
+
+		return e.complexity.HeatmapData.Country(childComplexity), true
 
 	case "HeatmapData.latitude":
 		if e.complexity.HeatmapData.Latitude == nil {
@@ -142,6 +187,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.AggregateByAgentName(childComplexity), true
+
+	case "Query.aggregateByClientVersion":
+		if e.complexity.Query.AggregateByClientVersion == nil {
+			break
+		}
+
+		return e.complexity.Query.AggregateByClientVersion(childComplexity), true
 
 	case "Query.aggregateByCountry":
 		if e.complexity.Query.AggregateByCountry == nil {
@@ -226,12 +278,20 @@ var sources = []*ast.Source{
   count: Int!
 }
 
+type ClientVersionAggregation {
+  client: String!
+  count: Int!
+  versions: [AggregateData!]!
+}
+
 type HeatmapData {
   networkType: String!
 	clientType:  String!
 	syncStatus:  String!
 	latitude:    Float!
 	longitude:   Float!
+  city:        String!
+  country:     String!
 }
 
 type Query {
@@ -239,6 +299,7 @@ type Query {
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
+  aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
 }`, BuiltIn: false},
 }
@@ -369,6 +430,111 @@ func (ec *executionContext) _AggregateData_count(ctx context.Context, field grap
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ClientVersionAggregation_client(ctx context.Context, field graphql.CollectedField, obj *model.ClientVersionAggregation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ClientVersionAggregation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Client, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ClientVersionAggregation_count(ctx context.Context, field graphql.CollectedField, obj *model.ClientVersionAggregation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ClientVersionAggregation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ClientVersionAggregation_versions(ctx context.Context, field graphql.CollectedField, obj *model.ClientVersionAggregation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ClientVersionAggregation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Versions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.AggregateData)
+	fc.Result = res
+	return ec.marshalNAggregateData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐAggregateDataᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HeatmapData_networkType(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
@@ -546,6 +712,76 @@ func (ec *executionContext) _HeatmapData_longitude(ctx context.Context, field gr
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _HeatmapData_city(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "HeatmapData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.City, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HeatmapData_country(ctx context.Context, field graphql.CollectedField, obj *model.HeatmapData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "HeatmapData",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_aggregateByAgentName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -684,6 +920,41 @@ func (ec *executionContext) _Query_aggregateByNetwork(ctx context.Context, field
 	res := resTmp.([]*model.AggregateData)
 	fc.Result = res
 	return ec.marshalNAggregateData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐAggregateDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_aggregateByClientVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AggregateByClientVersion(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ClientVersionAggregation)
+	fc.Result = res
+	return ec.marshalNClientVersionAggregation2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐClientVersionAggregationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getHeatmapData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1919,6 +2190,43 @@ func (ec *executionContext) _AggregateData(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var clientVersionAggregationImplementors = []string{"ClientVersionAggregation"}
+
+func (ec *executionContext) _ClientVersionAggregation(ctx context.Context, sel ast.SelectionSet, obj *model.ClientVersionAggregation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clientVersionAggregationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClientVersionAggregation")
+		case "client":
+			out.Values[i] = ec._ClientVersionAggregation_client(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "count":
+			out.Values[i] = ec._ClientVersionAggregation_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "versions":
+			out.Values[i] = ec._ClientVersionAggregation_versions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var heatmapDataImplementors = []string{"HeatmapData"}
 
 func (ec *executionContext) _HeatmapData(ctx context.Context, sel ast.SelectionSet, obj *model.HeatmapData) graphql.Marshaler {
@@ -1952,6 +2260,16 @@ func (ec *executionContext) _HeatmapData(ctx context.Context, sel ast.SelectionS
 			}
 		case "longitude":
 			out.Values[i] = ec._HeatmapData_longitude(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "city":
+			out.Values[i] = ec._HeatmapData_city(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "country":
+			out.Values[i] = ec._HeatmapData_country(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2032,6 +2350,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_aggregateByNetwork(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "aggregateByClientVersion":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_aggregateByClientVersion(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2371,6 +2703,53 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNClientVersionAggregation2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐClientVersionAggregationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClientVersionAggregation) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNClientVersionAggregation2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐClientVersionAggregation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNClientVersionAggregation2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐClientVersionAggregation(ctx context.Context, sel ast.SelectionSet, v *model.ClientVersionAggregation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ClientVersionAggregation(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
