@@ -12,7 +12,7 @@ require (
 	github.com/libp2p/go-tcp-transport v0.2.7
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/protolambda/zrnt v0.18.1
-	github.com/protolambda/ztyp v0.1.8
+	github.com/protolambda/ztyp v0.1.9
 	github.com/rs/cors v1.8.0
 	github.com/vektah/gqlparser/v2 v2.1.0
 	go.mongodb.org/mongo-driver v1.7.0
