@@ -7,7 +7,11 @@ package p2p
 import (
 	"context"
 	"errors"
+	"eth2-crawler/crawler/rpc/methods"
+	reqresp "eth2-crawler/crawler/rpc/request"
 	"fmt"
+
+	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -24,9 +28,12 @@ type Client struct {
 
 // Host represent p2p services
 type Host interface {
+	host.Host
 	IdentifyRequest(ctx context.Context, peerInfo *peer.AddrInfo) error
 	GetProtocolVersion(peer.ID) (string, error)
 	GetAgentVersion(peer.ID) (string, error)
+	FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peerID peer.ID, comp reqresp.Compression) (
+		*beacon.Status, error)
 }
 
 type idService interface {
@@ -96,4 +103,35 @@ func (c *Client) GetAgentVersion(peerID peer.ID) (string, error) {
 		return "", fmt.Errorf("error converting interface to string")
 	}
 	return version, nil
+}
+
+func (c *Client) FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peerID peer.ID, comp reqresp.Compression) (
+	*beacon.Status, error) {
+	var resCode reqresp.ResponseCode = reqresp.ServerErrCode // error by default
+	var data *beacon.Status
+	err := methods.StatusRPCv1.RunRequest(ctx, sFn, peerID, comp,
+		reqresp.RequestSSZInput{Obj: new(beacon.Status)}, 1,
+		func() error {
+			return nil
+		},
+		func(chunk reqresp.ChunkedResponseHandler) error {
+			resCode = chunk.ResultCode()
+			switch resCode {
+			case reqresp.ServerErrCode, reqresp.InvalidReqCode:
+				msg, err := chunk.ReadErrMsg()
+				if err != nil {
+					return fmt.Errorf("%s: %v", msg, err)
+				}
+			case reqresp.SuccessCode:
+				var stat beacon.Status
+				if err := chunk.ReadObj(&stat); err != nil {
+					return err
+				}
+				data = &stat
+			default:
+				return errors.New("unexpected result code")
+			}
+			return nil
+		})
+	return data, err
 }

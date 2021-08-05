@@ -7,14 +7,14 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
-	"time"
-
 	"eth2-crawler/crawler/p2p"
+	reqresp "eth2-crawler/crawler/rpc/request"
 	"eth2-crawler/crawler/util"
 	"eth2-crawler/models"
 	ipResolver "eth2-crawler/resolver"
 	"eth2-crawler/store"
+	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/enode"
@@ -96,36 +96,50 @@ func (c *crawler) collectNodeInfo(node *enode.Node) {
 		return
 	}
 
-	go c.collectNodeInfoRetryer(peer)
+	c.collectNodeInfoRetryer(peer, node.String())
 }
 
-func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
+func (c *crawler) collectNodeInfoRetryer(peer *models.Peer, enr string) {
 	count := 0
 	var err error
-	for count < 20 {
+	for count < 1 {
 		time.Sleep(time.Second * 5)
 		count++
 		ctx := context.Background()
-		err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
+		//err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
+		//if err != nil {
+		//	continue
+		//}
+		//var ag, pv string
+		//ag, err = c.host.GetAgentVersion(peer.ID)
+		//if err != nil {
+		//	continue
+		//} else {
+		//	peer.SetUserAgent(ag)
+		//}
+		//pv, err = c.host.GetProtocolVersion(peer.ID)
+		//if err != nil {
+		//	continue
+		//} else {
+		//	peer.SetProtocolVersion(pv)
+		//}
+		err := c.host.Connect(ctx, *peer.GetPeerInfo())
 		if err != nil {
-			continue
+			return
 		}
-		var ag, pv string
-		ag, err = c.host.GetAgentVersion(peer.ID)
+		fmt.Println(peer.ID)
+		// get status
+		status, err := c.host.FetchStatus(c.host.NewStream, ctx, peer.ID, new(reqresp.SnappyCompression))
 		if err != nil {
-			continue
+			fmt.Println(err)
+			return
 		} else {
-			peer.SetUserAgent(ag)
-		}
-		pv, err = c.host.GetProtocolVersion(peer.ID)
-		if err != nil {
-			continue
-		} else {
-			peer.SetProtocolVersion(pv)
+			fmt.Println(status)
 		}
 
 		// successfully got all the node info's
 		peer.SetConnectionStatus(true)
+		fmt.Println("successfully connected : ", enr, "details: ", peer.String())
 		log.Info("successfully collected all info", peer.Log())
 
 		var oldPeer *models.Peer

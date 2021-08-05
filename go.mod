@@ -5,12 +5,14 @@ go 1.16
 require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/ethereum/go-ethereum v1.10.6
+	github.com/golang/snappy v0.0.3 // indirect
 	github.com/ipdata/go v0.7.2
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6
 	github.com/libp2p/go-libp2p-noise v0.2.2
 	github.com/libp2p/go-tcp-transport v0.2.4
 	github.com/multiformats/go-multiaddr v0.3.3
+	github.com/multiformats/go-multistream v0.2.2 // indirect
 	github.com/protolambda/zrnt v0.17.0
 	github.com/protolambda/ztyp v0.1.8
 	github.com/rs/cors v1.8.0
