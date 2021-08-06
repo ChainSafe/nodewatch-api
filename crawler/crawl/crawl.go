@@ -106,35 +106,41 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer, enr string) {
 		time.Sleep(time.Second * 5)
 		count++
 		ctx := context.Background()
-		//err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
-		//if err != nil {
-		//	continue
-		//}
-		//var ag, pv string
-		//ag, err = c.host.GetAgentVersion(peer.ID)
-		//if err != nil {
-		//	continue
-		//} else {
-		//	peer.SetUserAgent(ag)
-		//}
-		//pv, err = c.host.GetProtocolVersion(peer.ID)
-		//if err != nil {
-		//	continue
-		//} else {
-		//	peer.SetProtocolVersion(pv)
-		//}
+		err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
+		if err != nil {
+			continue
+		}
+		var ag, pv string
+		ag, err = c.host.GetAgentVersion(peer.ID)
+		if err != nil {
+			continue
+		} else {
+			peer.SetUserAgent(ag)
+		}
+		pv, err = c.host.GetProtocolVersion(peer.ID)
+		if err != nil {
+			continue
+		} else {
+			peer.SetProtocolVersion(pv)
+		}
+
+		fmt.Println("Peer Info")
+		fmt.Println(*peer.GetPeerInfo())
 		err := c.host.Connect(ctx, *peer.GetPeerInfo())
 		if err != nil {
+			fmt.Println("Unable to connect")
+			fmt.Println(err)
+			fmt.Printf("%s ------------ %s\n", enr, peer.Log())
 			return
 		}
-		fmt.Println(peer.ID)
 		// get status
 		status, err := c.host.FetchStatus(c.host.NewStream, ctx, peer.ID, new(reqresp.SnappyCompression))
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("Error in fetch status:  " + err.Error())
+			fmt.Printf("%s ------------ %s\n", enr, peer.Log())
 			return
 		} else {
-			fmt.Println(status)
+			fmt.Printf("Got result from fetch status: %s\n", status)
 		}
 
 		// successfully got all the node info's

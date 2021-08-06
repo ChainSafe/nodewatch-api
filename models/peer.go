@@ -230,6 +230,13 @@ func (p *Peer) GetPeerInfo() *peer.AddrInfo {
 		madd, _ := ma.NewMultiaddr(v)
 		maddrs = append(maddrs, madd)
 	}
+
+	// madd, _ := ma.NewMultiaddr("/ip4/192.168.29.191/tcp/13000")
+	// id, err := peer.Decode("16Uiu2HAmMEH5HAEh627baA5qkTivAbEbj2TGvwpeSajBitPzamAF")
+	// if err != nil {
+	// 	fmt.Println("Error in peer ID: " + err.Error())
+	// }
+
 	return &peer.AddrInfo{
 		ID:    p.ID,
 		Addrs: maddrs,
