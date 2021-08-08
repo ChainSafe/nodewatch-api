@@ -133,9 +133,6 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 			peer.SetProtocolVersion(pv)
 		}
 
-		if err != nil || status == nil {
-			continue
-		}
 		log.Info("successfully collected all info", peer.Log())
 		// successfully got all the node info's
 		peer.SetConnectionStatus(true)
