@@ -45,6 +45,8 @@ const (
 	OSMAC     OS = "mac"
 	OSWindows OS = "windows"
 	OSUnknown OS = "unknown"
+
+	VersionUnknown = "unknown"
 )
 
 // UserAgent holds peer's client related info
@@ -202,6 +204,10 @@ func (p *Peer) SetUserAgent(ag string) {
 	versions := strings.Split(userAgent.Version, "-")
 	versions = strings.Split(versions[0], "+")
 	userAgent.Version = versions[0]
+	if userAgent.Version == "" {
+		userAgent.Version = VersionUnknown
+	}
+
 	var validOS = []OS{OSLinux, OSMAC, OSWindows}
 	for _, vos := range validOS {
 		if strings.Contains(strings.ToLower(os), strings.ToLower(string(vos))) {

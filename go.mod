@@ -10,13 +10,12 @@ require (
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6
 	github.com/libp2p/go-libp2p-noise v0.2.2
-	github.com/libp2p/go-tcp-transport v0.2.4
+	github.com/libp2p/go-tcp-transport v0.2.7
 	github.com/multiformats/go-multiaddr v0.3.3
-	github.com/multiformats/go-multistream v0.2.2 // indirect
-	github.com/protolambda/zrnt v0.17.0
-	github.com/protolambda/ztyp v0.1.8
+	github.com/protolambda/zrnt v0.19.0
+	github.com/protolambda/ztyp v0.1.9
 	github.com/rs/cors v1.8.0
 	github.com/vektah/gqlparser/v2 v2.1.0
-	go.mongodb.org/mongo-driver v1.7.0
+	go.mongodb.org/mongo-driver v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
 )
