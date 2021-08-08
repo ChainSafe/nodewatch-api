@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -133,4 +134,14 @@ func (aee AttnetsENREntry) AttnetBits() (beacon.AttnetBits, error) {
 
 func (aee AttnetsENREntry) String() string {
 	return hex.EncodeToString(aee)
+}
+
+func getGenesisTime() time.Time {
+	t, _ := time.Parse(time.RFC822, "01 Dec 20 12:00 GMT")
+	return t
+}
+
+func CurrentBlock() int64 {
+	duration := time.Since(getGenesisTime())
+	return int64((duration / time.Second) / 12)
 }

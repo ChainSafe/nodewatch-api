@@ -9,6 +9,7 @@ import (
 	"errors"
 	"eth2-crawler/crawler/rpc/methods"
 	reqresp "eth2-crawler/crawler/rpc/request"
+	"eth2-crawler/models"
 	"fmt"
 
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
@@ -32,7 +33,7 @@ type Host interface {
 	IdentifyRequest(ctx context.Context, peerInfo *peer.AddrInfo) error
 	GetProtocolVersion(peer.ID) (string, error)
 	GetAgentVersion(peer.ID) (string, error)
-	FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peerID peer.ID, comp reqresp.Compression) (
+	FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peer *models.Peer, comp reqresp.Compression) (
 		*beacon.Status, error)
 }
 
@@ -105,12 +106,20 @@ func (c *Client) GetAgentVersion(peerID peer.ID) (string, error) {
 	return version, nil
 }
 
-func (c *Client) FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peerID peer.ID, comp reqresp.Compression) (
+func (c *Client) FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peer *models.Peer, comp reqresp.Compression) (
 	*beacon.Status, error) {
-	var resCode reqresp.ResponseCode = reqresp.ServerErrCode // error by default
+	// use the fork digest same of peer to avoid stream reset
+	status := &beacon.Status{
+		ForkDigest:     peer.Eth2Data.ForkDigest,
+		FinalizedRoot:  beacon.Root{},
+		FinalizedEpoch: 0,
+		HeadRoot:       beacon.Root{},
+		HeadSlot:       0,
+	}
+	resCode := reqresp.ServerErrCode // error by default
 	var data *beacon.Status
-	err := methods.StatusRPCv1.RunRequest(ctx, sFn, peerID, comp,
-		reqresp.RequestSSZInput{Obj: new(beacon.Status)}, 1,
+	err := methods.StatusRPCv1.RunRequest(ctx, sFn, peer.ID, comp,
+		reqresp.RequestSSZInput{Obj: status}, 1,
 		func() error {
 			return nil
 		},
@@ -120,7 +129,7 @@ func (c *Client) FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peerI
 			case reqresp.ServerErrCode, reqresp.InvalidReqCode:
 				msg, err := chunk.ReadErrMsg()
 				if err != nil {
-					return fmt.Errorf("%s: %v", msg, err)
+					return fmt.Errorf("%s: %w", msg, err)
 				}
 			case reqresp.SuccessCode:
 				var stat beacon.Status

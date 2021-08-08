@@ -20,6 +20,8 @@ import (
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
+const blockIgnoreThreshold = 2
+
 // ClientName defines the type for eth2 client name
 type ClientName string
 
@@ -104,6 +106,7 @@ type Peer struct {
 
 	IsConnectable bool  `json:"is_connectable"`
 	LastConnected int64 `json:"last_connected"`
+	IsSynced      bool  `json:"is_synced"`
 }
 
 // NewPeer initializes new peer
@@ -196,8 +199,9 @@ func (p *Peer) SetUserAgent(ag string) {
 		}
 	}
 	// update the version and os to standard form
-	userAgent.Version = strings.TrimRight(userAgent.Version, "-")
-
+	versions := strings.Split(userAgent.Version, "-")
+	versions = strings.Split(versions[0], "+")
+	userAgent.Version = versions[0]
 	var validOS = []OS{OSLinux, OSMAC, OSWindows}
 	for _, vos := range validOS {
 		if strings.Contains(strings.ToLower(os), strings.ToLower(string(vos))) {
@@ -218,6 +222,13 @@ func (p *Peer) SetConnectionStatus(status bool) {
 	}
 }
 
+// SetSyncStatus sets the sync status of a peer
+func (p *Peer) SetSyncStatus(block int64) {
+	if util.CurrentBlock()-block <= blockIgnoreThreshold {
+		p.IsSynced = true
+	}
+}
+
 // SetGeoLocation sets the geolocation information
 func (p *Peer) SetGeoLocation(geoLocation *GeoLocation) {
 	p.GeoLocation = geoLocation
@@ -230,13 +241,6 @@ func (p *Peer) GetPeerInfo() *peer.AddrInfo {
 		madd, _ := ma.NewMultiaddr(v)
 		maddrs = append(maddrs, madd)
 	}
-
-	// madd, _ := ma.NewMultiaddr("/ip4/192.168.29.191/tcp/13000")
-	// id, err := peer.Decode("16Uiu2HAmMEH5HAEh627baA5qkTivAbEbj2TGvwpeSajBitPzamAF")
-	// if err != nil {
-	// 	fmt.Println("Error in peer ID: " + err.Error())
-	// }
-
 	return &peer.AddrInfo{
 		ID:    p.ID,
 		Addrs: maddrs,

@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 package reqresp
 
 import (
@@ -12,12 +15,14 @@ import (
 
 type NewStreamFn func(ctx context.Context, peerId peer.ID, protocolId ...protocol.ID) (network.Stream, error)
 
-func (newStreamFn NewStreamFn) Request(ctx context.Context, peerId peer.ID, protocolId protocol.ID, r io.Reader, comp Compression, handle ResponseHandler) error {
-	stream, err := newStreamFn(ctx, peerId, protocolId)
+func (newStreamFn NewStreamFn) Request(ctx context.Context, peerID peer.ID, protocolID protocol.ID, r io.Reader, comp Compression, handle ResponseHandler) error {
+	stream, err := newStreamFn(ctx, peerID, protocolID)
 	if err != nil {
 		return err
 	}
-	defer stream.Close()
+	defer func() {
+		_ = stream.Close()
+	}()
 
 	var buf bytes.Buffer
 	if err := EncodeHeaderAndPayload(r, &buf, comp); err != nil {

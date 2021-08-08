@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 package reqresp
 
 import (
@@ -19,10 +22,10 @@ type RequestPayloadHandler func(ctx context.Context, peerId peer.ID, requestLen 
 
 type StreamCtxFn func() context.Context
 
-// startReqRPC registers a request handler for the given protocol. Compression is optional and may be nil.
+// MakeStreamHandler startReqRPC registers a request handler for the given protocol. Compression is optional and may be nil.
 func (handle RequestPayloadHandler) MakeStreamHandler(newCtx StreamCtxFn, comp Compression, minRequestContentSize, maxRequestContentSize uint64) network.StreamHandler {
 	return func(stream network.Stream) {
-		peerId := stream.Conn().RemotePeer()
+		peerID := stream.Conn().RemotePeer()
 		ctx, cancel := context.WithCancel(newCtx())
 		defer cancel()
 
@@ -35,7 +38,7 @@ func (handle RequestPayloadHandler) MakeStreamHandler(newCtx StreamCtxFn, comp C
 		w := io.WriteCloser(stream)
 		// If no request data, then do not even read a length from the stream.
 		if maxRequestContentSize == 0 {
-			handle(ctx, peerId, 0, nil, w, comp, nil)
+			handle(ctx, peerID, 0, nil, w, comp, nil)
 			return
 		}
 
@@ -47,15 +50,16 @@ func (handle RequestPayloadHandler) MakeStreamHandler(newCtx StreamCtxFn, comp C
 		blr.PerRead = true
 		reqLen, err := binary.ReadUvarint(blr)
 		blr.PerRead = false
-		if err != nil {
+		switch {
+		case err != nil:
 			invalidInputErr = err
-		} else if reqLen < minRequestContentSize {
+		case reqLen < minRequestContentSize:
 			// Check against raw content size minimum (without compression applied)
 			invalidInputErr = fmt.Errorf("request length %d is unexpectedly small, request size minimum is %d", reqLen, minRequestContentSize)
-		} else if reqLen > maxRequestContentSize {
+		case reqLen > maxRequestContentSize:
 			// Check against raw content size limit (without compression applied)
 			invalidInputErr = fmt.Errorf("request length %d exceeds request size limit %d", reqLen, maxRequestContentSize)
-		} else if comp != nil {
+		case comp != nil:
 			// Now apply compression adjustment for size limit, and use that as the limit for the buffered-limited-reader.
 			s, err := comp.MaxEncodedLen(maxRequestContentSize)
 			if err != nil {
@@ -64,13 +68,12 @@ func (handle RequestPayloadHandler) MakeStreamHandler(newCtx StreamCtxFn, comp C
 				maxRequestContentSize = s
 			}
 		}
-		// If the input is invalid, never read it.
-		if invalidInputErr != nil {
+		switch {
+		case invalidInputErr != nil: // If the input is invalid, never read it.
 			maxRequestContentSize = 0
-		}
-		if comp == nil {
+		case comp == nil:
 			blr.N = int(maxRequestContentSize)
-		} else {
+		default:
 			v, err := comp.MaxEncodedLen(maxRequestContentSize)
 			if err != nil {
 				blr.N = int(maxRequestContentSize)
@@ -79,6 +82,6 @@ func (handle RequestPayloadHandler) MakeStreamHandler(newCtx StreamCtxFn, comp C
 			}
 		}
 		r := io.Reader(blr)
-		handle(ctx, peerId, reqLen, r, w, comp, invalidInputErr)
+		handle(ctx, peerID, reqLen, r, w, comp, invalidInputErr)
 	}
 }

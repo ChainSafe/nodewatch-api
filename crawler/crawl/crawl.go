@@ -16,6 +16,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/protolambda/zrnt/eth2/beacon/common"
+
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 )
@@ -96,27 +98,34 @@ func (c *crawler) collectNodeInfo(node *enode.Node) {
 		return
 	}
 
-	c.collectNodeInfoRetryer(peer, node.String())
+	go c.collectNodeInfoRetryer(peer)
 }
 
-func (c *crawler) collectNodeInfoRetryer(peer *models.Peer, enr string) {
+func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 	count := 0
 	var err error
-	for count < 1 {
+	var ag, pv string
+	for count < 20 {
 		time.Sleep(time.Second * 5)
 		count++
 		ctx := context.Background()
-		err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
+		err = c.host.Connect(ctx, *peer.GetPeerInfo())
 		if err != nil {
 			continue
 		}
-		var ag, pv string
+		// get status
+		var status *common.Status
+		status, err = c.host.FetchStatus(c.host.NewStream, ctx, peer, new(reqresp.SnappyCompression))
+		if err != nil || status == nil {
+			continue
+		}
 		ag, err = c.host.GetAgentVersion(peer.ID)
 		if err != nil {
 			continue
 		} else {
 			peer.SetUserAgent(ag)
 		}
+
 		pv, err = c.host.GetProtocolVersion(peer.ID)
 		if err != nil {
 			continue
@@ -124,29 +133,15 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer, enr string) {
 			peer.SetProtocolVersion(pv)
 		}
 
-		fmt.Println("Peer Info")
-		fmt.Println(*peer.GetPeerInfo())
-		err := c.host.Connect(ctx, *peer.GetPeerInfo())
-		if err != nil {
-			fmt.Println("Unable to connect")
-			fmt.Println(err)
-			fmt.Printf("%s ------------ %s\n", enr, peer.Log())
-			return
+		if err != nil || status == nil {
+			continue
 		}
-		// get status
-		status, err := c.host.FetchStatus(c.host.NewStream, ctx, peer.ID, new(reqresp.SnappyCompression))
-		if err != nil {
-			fmt.Println("Error in fetch status:  " + err.Error())
-			fmt.Printf("%s ------------ %s\n", enr, peer.Log())
-			return
-		} else {
-			fmt.Printf("Got result from fetch status: %s\n", status)
-		}
-
+		log.Info("successfully collected all info", peer.Log())
 		// successfully got all the node info's
 		peer.SetConnectionStatus(true)
-		fmt.Println("successfully connected : ", enr, "details: ", peer.String())
-		log.Info("successfully collected all info", peer.Log())
+
+		// set sync status
+		peer.SetSyncStatus(int64(status.HeadSlot))
 
 		var oldPeer *models.Peer
 		oldPeer, err = c.peerStore.View(ctx, peer.ID)

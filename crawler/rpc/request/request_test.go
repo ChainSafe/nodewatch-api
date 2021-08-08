@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 package reqresp
 
 import (
@@ -15,7 +18,7 @@ func TestEncodeHeaderAndPayloadSnappy(t *testing.T) {
 		t.Error(err)
 	}
 	expected, _ := hex.DecodeString("04ff060000734e6150705901080000e5310030aabb1234")
-	if bytes.Compare(expected, buf.Bytes()) != 0 {
+	if !bytes.Equal(expected, buf.Bytes()) {
 		t.Error("unexpected encoding output")
 	}
 }
@@ -29,7 +32,7 @@ func TestEncodeHeaderAndPayload(t *testing.T) {
 		t.Error(err)
 	}
 	expected, _ := hex.DecodeString("04aabb1234")
-	if bytes.Compare(expected, buf.Bytes()) != 0 {
+	if !bytes.Equal(expected, buf.Bytes()) {
 		t.Error("unexpected encoding output")
 	}
 }
@@ -43,7 +46,7 @@ func TestStreamHeaderAndPayloadSnappy(t *testing.T) {
 		t.Error(err)
 	}
 	expected, _ := hex.DecodeString("04ff060000734e6150705901080000e5310030aabb1234")
-	if bytes.Compare(expected, buf.Bytes()) != 0 {
+	if !bytes.Equal(expected, buf.Bytes()) {
 		t.Error("unexpected encoding output")
 	}
 }
@@ -57,7 +60,7 @@ func TestStreamHeaderAndPayload(t *testing.T) {
 		t.Error(err)
 	}
 	expected, _ := hex.DecodeString("04aabb1234")
-	if bytes.Compare(expected, buf.Bytes()) != 0 {
+	if !bytes.Equal(expected, buf.Bytes()) {
 		t.Error("unexpected encoding output")
 	}
 }

@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 package reqresp
 
 import (
@@ -8,13 +11,13 @@ import (
 )
 
 type Compression interface {
-	// Wraps a reader to decompress data as reads happen.
+	// Decompress Wraps a reader to decompress data as reads happen.
 	Decompress(r io.Reader) io.Reader
-	// Wraps a writer to compress data as writes happen.
+	// Compress Wraps a writer to compress data as writes happen.
 	Compress(w io.WriteCloser) io.WriteCloser
-	// Returns an error when the input size is too large to encode.
+	// MaxEncodedLen Returns an error when the input size is too large to encode.
 	MaxEncodedLen(msgLen uint64) (uint64, error)
-	// The name of the compression that is suffixed to the actual encoding. E.g. "snappy", w.r.t. "ssz_snappy".
+	// Name is the name of the compression that is suffixed to the actual encoding. E.g. "snappy", w.r.t. "ssz_snappy".
 	Name() string
 }
 

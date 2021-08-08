@@ -1,3 +1,6 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
 package reqresp
 
 import (
@@ -53,14 +56,14 @@ func EncodeHeaderAndPayload(r io.Reader, w io.Writer, comp Compression) error {
 	}
 	if comp != nil {
 		compressedWriter := comp.Compress(&noCloseWriter{w: w})
-		defer compressedWriter.Close()
+		defer func() {
+			_ = compressedWriter.Close()
+		}()
 		if _, err := buf.WriteTo(compressedWriter); err != nil {
 			return err
 		}
-	} else {
-		if _, err := buf.WriteTo(w); err != nil {
-			return err
-		}
+	} else if _, err := buf.WriteTo(w); err != nil {
+		return err
 	}
 	return nil
 }
@@ -72,21 +75,23 @@ func StreamHeaderAndPayload(size uint64, r io.Reader, w io.Writer, comp Compress
 	sizeByteLen := binary.PutUvarint(sizeBytes[:], size)
 	n, err := w.Write(sizeBytes[:sizeByteLen])
 	if err != nil {
-		return fmt.Errorf("failed to write size bytes: %v", err)
+		return fmt.Errorf("failed to write size bytes: %w", err)
 	}
 	if n != sizeByteLen {
 		return fmt.Errorf("failed to write size bytes fully: %d/%d", n, sizeByteLen)
 	}
 	if comp != nil {
 		compressedWriter := comp.Compress(&noCloseWriter{w: w})
-		defer compressedWriter.Close()
+		defer func() {
+			_ = compressedWriter.Close()
+		}()
 		if _, err := io.Copy(compressedWriter, r); err != nil {
-			return fmt.Errorf("failed to write payload through compressed writer: %v", err)
+			return fmt.Errorf("failed to write payload through compressed writer: %w", err)
 		}
 		return nil
 	} else {
 		if _, err := io.Copy(w, r); err != nil {
-			return fmt.Errorf("failed to write payload: %v", err)
+			return fmt.Errorf("failed to write payload: %w", err)
 		}
 		return nil
 	}
@@ -107,7 +112,7 @@ func EncodeChunk(result ResponseCode, r io.Reader, w io.Writer, comp Compression
 	return EncodeHeaderAndPayload(r, w, comp)
 }
 
-// EncodeChunk reads (decompressed) response message from the msg io.Reader,
+// StreamChunk reads (decompressed) response message from the msg io.Reader,
 // and writes it as a chunk with given result code to the output writer. The compression is optional and may be nil.
 func StreamChunk(result ResponseCode, size uint64, r io.Reader, w io.Writer, comp Compression) error {
 	if err := EncodeResult(result, w); err != nil {
