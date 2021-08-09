@@ -15,6 +15,7 @@ require (
 	github.com/protolambda/zrnt v0.19.0
 	github.com/protolambda/ztyp v0.1.9
 	github.com/rs/cors v1.8.0
+	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.1.0
 	go.mongodb.org/mongo-driver v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
