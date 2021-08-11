@@ -20,6 +20,8 @@ import (
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
+const blockIgnoreThreshold = 2
+
 // ClientName defines the type for eth2 client name
 type ClientName string
 
@@ -106,6 +108,7 @@ type Peer struct {
 
 	IsConnectable bool  `json:"is_connectable"`
 	LastConnected int64 `json:"last_connected"`
+	IsSynced      bool  `json:"is_synced"`
 }
 
 // NewPeer initializes new peer
@@ -198,7 +201,9 @@ func (p *Peer) SetUserAgent(ag string) {
 		}
 	}
 	// update the version and os to standard form
-	userAgent.Version = strings.Split(userAgent.Version, "-")[0]
+	versions := strings.Split(userAgent.Version, "-")
+	versions = strings.Split(versions[0], "+")
+	userAgent.Version = versions[0]
 	if userAgent.Version == "" {
 		userAgent.Version = VersionUnknown
 	}
@@ -220,6 +225,13 @@ func (p *Peer) SetConnectionStatus(status bool) {
 	p.IsConnectable = status
 	if status {
 		p.LastConnected = time.Now().Unix()
+	}
+}
+
+// SetSyncStatus sets the sync status of a peer
+func (p *Peer) SetSyncStatus(block int64) {
+	if util.CurrentBlock()-block <= blockIgnoreThreshold {
+		p.IsSynced = true
 	}
 }
 

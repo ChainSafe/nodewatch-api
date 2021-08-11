@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -19,18 +20,31 @@ import (
 )
 
 func AddrsFromEnode(node *enode.Node) (*peer.AddrInfo, error) {
-	madd, err := EnodeToMultiAddr(node)
+	madds, err := EnodeToMultiAddr(node)
 	if err != nil {
 		return nil, err
 	}
-	peerInfo, err := peer.AddrInfoFromP2pAddr(madd)
+
+	if len(madds) == 0 {
+		return nil, nil
+	}
+
+	peerInfo, err := peer.AddrInfoFromP2pAddr(madds[0])
 	if err != nil {
 		return nil, err
 	}
+
+	for i := 1; i < len(madds); i++ {
+		transport, _ := peer.SplitAddr(madds[i])
+		peerInfo.Addrs = append(peerInfo.Addrs, transport)
+	}
+
 	return peerInfo, nil
 }
 
-func EnodeToMultiAddr(node *enode.Node) (multiaddr.Multiaddr, error) {
+func EnodeToMultiAddr(node *enode.Node) ([]multiaddr.Multiaddr, error) {
+	multiAddrs := []multiaddr.Multiaddr{}
+
 	ipScheme := "ip4"
 	if len(node.IP()) == net.IPv6len {
 		ipScheme = "ip6"
@@ -40,12 +54,21 @@ func EnodeToMultiAddr(node *enode.Node) (multiaddr.Multiaddr, error) {
 	if err != nil {
 		return nil, err
 	}
-	multiAddrStr := fmt.Sprintf("/%s/%s/tcp/%d/p2p/%s", ipScheme, node.IP().String(), node.TCP(), peerID)
-	multiAddr, err := multiaddr.NewMultiaddr(multiAddrStr)
+	tcpMultiAddrStr := fmt.Sprintf("/%s/%s/tcp/%d/p2p/%s", ipScheme, node.IP().String(), node.TCP(), peerID)
+	tcpMultiAddr, err := multiaddr.NewMultiaddr(tcpMultiAddrStr)
 	if err != nil {
 		return nil, err
 	}
-	return multiAddr, nil
+	multiAddrs = append(multiAddrs, tcpMultiAddr)
+
+	udpMultiAddrStr := fmt.Sprintf("/%s/%s/udp/%d/p2p/%s", ipScheme, node.IP().String(), node.UDP(), peerID)
+	udpMultiAddr, err := multiaddr.NewMultiaddr(udpMultiAddrStr)
+	if err != nil {
+		return nil, err
+	}
+	multiAddrs = append(multiAddrs, udpMultiAddr)
+
+	return multiAddrs, nil
 }
 
 type Eth2ENREntry []byte
@@ -111,4 +134,14 @@ func (aee AttnetsENREntry) AttnetBits() (beacon.AttnetBits, error) {
 
 func (aee AttnetsENREntry) String() string {
 	return hex.EncodeToString(aee)
+}
+
+func getGenesisTime() time.Time {
+	t, _ := time.Parse(time.RFC822, "01 Dec 20 12:00 GMT")
+	return t
+}
+
+func CurrentBlock() int64 {
+	duration := time.Since(getGenesisTime())
+	return int64((duration / time.Second) / 12)
 }

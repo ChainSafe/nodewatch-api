@@ -7,14 +7,16 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
-	"time"
-
 	"eth2-crawler/crawler/p2p"
+	reqresp "eth2-crawler/crawler/rpc/request"
 	"eth2-crawler/crawler/util"
 	"eth2-crawler/models"
 	ipResolver "eth2-crawler/resolver"
 	"eth2-crawler/store"
+	"fmt"
+	"time"
+
+	"github.com/protolambda/zrnt/eth2/beacon/common"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/enode"
@@ -102,21 +104,28 @@ func (c *crawler) collectNodeInfo(node *enode.Node) {
 func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 	count := 0
 	var err error
+	var ag, pv string
 	for count < 20 {
 		time.Sleep(time.Second * 5)
 		count++
 		ctx := context.Background()
-		err = c.host.IdentifyRequest(ctx, peer.GetPeerInfo())
+		err = c.host.Connect(ctx, *peer.GetPeerInfo())
 		if err != nil {
 			continue
 		}
-		var ag, pv string
+		// get status
+		var status *common.Status
+		status, err = c.host.FetchStatus(c.host.NewStream, ctx, peer, new(reqresp.SnappyCompression))
+		if err != nil || status == nil {
+			continue
+		}
 		ag, err = c.host.GetAgentVersion(peer.ID)
 		if err != nil {
 			continue
 		} else {
 			peer.SetUserAgent(ag)
 		}
+
 		pv, err = c.host.GetProtocolVersion(peer.ID)
 		if err != nil {
 			continue
@@ -124,9 +133,12 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 			peer.SetProtocolVersion(pv)
 		}
 
+		log.Info("successfully collected all info", peer.Log())
 		// successfully got all the node info's
 		peer.SetConnectionStatus(true)
-		log.Info("successfully collected all info", peer.Log())
+
+		// set sync status
+		peer.SetSyncStatus(int64(status.HeadSlot))
 
 		var oldPeer *models.Peer
 		oldPeer, err = c.peerStore.View(ctx, peer.ID)
