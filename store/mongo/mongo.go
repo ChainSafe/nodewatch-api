@@ -272,6 +272,46 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 	return result, nil
 }
 
+type syncAggregateData struct {
+	IsSynced bool `json:"_id" bson:"_id"`
+	Count    int  `json:"count" bson:"count"`
+}
+
+func (s *mongoStore) AggregateBySyncStatus(ctx context.Context) ([]*models.AggregateData, error) {
+	query := mongo.Pipeline{
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: "$issynced"},
+				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			}},
+		},
+	}
+	cursor, err := s.coll.Aggregate(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*models.AggregateData{}
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		data := new(syncAggregateData)
+		err := cursor.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+
+		var name string
+		if data.IsSynced {
+			name = models.SyncTypeSynced
+		} else {
+			name = models.SyncTypeUnsynced
+		}
+
+		result = append(result, &models.AggregateData{Name: name, Count: data.Count})
+	}
+	return result, nil
+}
+
 // New creates new instance of Entry Store based on MongoDB
 func New(cfg *config.Database) (store.Provider, error) {
 	timeout := time.Duration(cfg.Timeout) * time.Second
