@@ -3,6 +3,11 @@
 
 package models
 
+const (
+	SyncTypeSynced   = "synced"
+	SyncTypeUnsynced = "unsynced"
+)
+
 // AggregateData represents data of group by queries
 type AggregateData struct {
 	Name  string `json:"name"`

@@ -63,6 +63,12 @@ type ComplexityRoot struct {
 		SyncStatus  func(childComplexity int) int
 	}
 
+	NodeStats struct {
+		NodeSyncedPercentage   func(childComplexity int) int
+		NodeUnsyncedPercentage func(childComplexity int) int
+		TotalNodes             func(childComplexity int) int
+	}
+
 	Query struct {
 		AggregateByAgentName       func(childComplexity int) int
 		AggregateByClientVersion   func(childComplexity int) int
@@ -70,6 +76,7 @@ type ComplexityRoot struct {
 		AggregateByNetwork         func(childComplexity int) int
 		AggregateByOperatingSystem func(childComplexity int) int
 		GetHeatmapData             func(childComplexity int) int
+		GetNodeStats               func(childComplexity int) int
 	}
 }
 
@@ -80,6 +87,7 @@ type QueryResolver interface {
 	AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error)
 	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
+	GetNodeStats(ctx context.Context) (*model.NodeStats, error)
 }
 
 type executableSchema struct {
@@ -181,6 +189,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HeatmapData.SyncStatus(childComplexity), true
 
+	case "NodeStats.nodeSyncedPercentage":
+		if e.complexity.NodeStats.NodeSyncedPercentage == nil {
+			break
+		}
+
+		return e.complexity.NodeStats.NodeSyncedPercentage(childComplexity), true
+
+	case "NodeStats.nodeUnsyncedPercentage":
+		if e.complexity.NodeStats.NodeUnsyncedPercentage == nil {
+			break
+		}
+
+		return e.complexity.NodeStats.NodeUnsyncedPercentage(childComplexity), true
+
+	case "NodeStats.totalNodes":
+		if e.complexity.NodeStats.TotalNodes == nil {
+			break
+		}
+
+		return e.complexity.NodeStats.TotalNodes(childComplexity), true
+
 	case "Query.aggregateByAgentName":
 		if e.complexity.Query.AggregateByAgentName == nil {
 			break
@@ -222,6 +251,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetHeatmapData(childComplexity), true
+
+	case "Query.getNodeStats":
+		if e.complexity.Query.GetNodeStats == nil {
+			break
+		}
+
+		return e.complexity.Query.GetNodeStats(childComplexity), true
 
 	}
 	return 0, false
@@ -284,6 +320,12 @@ type ClientVersionAggregation {
   versions: [AggregateData!]!
 }
 
+type NodeStats {
+  totalNodes: Int!
+  nodeSyncedPercentage: Float!
+  nodeUnsyncedPercentage: Float!
+}
+
 type HeatmapData {
   networkType: String!
 	clientType:  String!
@@ -301,6 +343,7 @@ type Query {
   aggregateByNetwork: [AggregateData!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
+  getNodeStats: NodeStats!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -782,6 +825,111 @@ func (ec *executionContext) _HeatmapData_country(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NodeStats_totalNodes(ctx context.Context, field graphql.CollectedField, obj *model.NodeStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalNodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeStats_nodeSyncedPercentage(ctx context.Context, field graphql.CollectedField, obj *model.NodeStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeSyncedPercentage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NodeStats_nodeUnsyncedPercentage(ctx context.Context, field graphql.CollectedField, obj *model.NodeStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NodeStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeUnsyncedPercentage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_aggregateByAgentName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -990,6 +1138,41 @@ func (ec *executionContext) _Query_getHeatmapData(ctx context.Context, field gra
 	res := resTmp.([]*model.HeatmapData)
 	fc.Result = res
 	return ec.marshalNHeatmapData2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐHeatmapDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getNodeStats(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetNodeStats(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeStats)
+	fc.Result = res
+	return ec.marshalNNodeStats2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐNodeStats(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2284,6 +2467,43 @@ func (ec *executionContext) _HeatmapData(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var nodeStatsImplementors = []string{"NodeStats"}
+
+func (ec *executionContext) _NodeStats(ctx context.Context, sel ast.SelectionSet, obj *model.NodeStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodeStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodeStats")
+		case "totalNodes":
+			out.Values[i] = ec._NodeStats_totalNodes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nodeSyncedPercentage":
+			out.Values[i] = ec._NodeStats_nodeSyncedPercentage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nodeUnsyncedPercentage":
+			out.Values[i] = ec._NodeStats_nodeUnsyncedPercentage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2378,6 +2598,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getHeatmapData(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getNodeStats":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getNodeStats(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2827,6 +3061,20 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNNodeStats2eth2ᚑcrawlerᚋgraphᚋmodelᚐNodeStats(ctx context.Context, sel ast.SelectionSet, v model.NodeStats) graphql.Marshaler {
+	return ec._NodeStats(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNNodeStats2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐNodeStats(ctx context.Context, sel ast.SelectionSet, v *model.NodeStats) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._NodeStats(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

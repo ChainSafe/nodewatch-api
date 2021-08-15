@@ -8,8 +8,10 @@ package graph
 
 import (
 	"context"
+
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
+	svcModels "eth2-crawler/models"
 )
 
 func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.AggregateData, error) {
@@ -122,6 +124,30 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 		}
 	}
 	return result, nil
+}
+
+func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
+	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var syncedCount int
+	var unsyncedCount int
+	for i := range aggregateData {
+		if aggregateData[i].Name == svcModels.SyncTypeSynced {
+			syncedCount = aggregateData[i].Count
+		} else {
+			unsyncedCount = aggregateData[i].Count
+		}
+	}
+
+	totalNode := syncedCount + unsyncedCount
+	return &model.NodeStats{
+		TotalNodes:             totalNode,
+		NodeSyncedPercentage:   (float64(syncedCount) / float64(totalNode)) * 100,
+		NodeUnsyncedPercentage: (float64(unsyncedCount) / float64(totalNode)) * 100,
+	}, nil
 }
 
 // Query returns generated.QueryResolver implementation.
