@@ -1,11 +1,12 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// Package store represents the data Store service
-package store
+// Package peerstore represents the data Store service
+package peerstore
 
 import (
 	"context"
+	"time"
 
 	"eth2-crawler/models"
 
@@ -18,8 +19,10 @@ type Provider interface {
 	Update(ctx context.Context, peer *models.Peer) error
 	Upsert(ctx context.Context, peer *models.Peer) error
 	View(ctx context.Context, peerID peer.ID) (*models.Peer, error)
+	Delete(ctx context.Context, peer *models.Peer) error
 	// Todo: accept filter and find options to get limited information
 	ViewAll(ctx context.Context) ([]*models.Peer, error)
+	ListForJob(ctx context.Context, lastUpdated time.Duration, limit int) ([]*models.Peer, error)
 	AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error)
 	AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error)

@@ -7,12 +7,13 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
+	"eth2-crawler/store/peerstore"
+	"eth2-crawler/store/record"
 	"fmt"
 	"net"
 
 	"eth2-crawler/crawler/p2p"
 	ipResolver "eth2-crawler/resolver"
-	"eth2-crawler/store"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
@@ -32,21 +33,16 @@ type listenConfig struct {
 }
 
 // Initialize initializes the core crawler component
-func Initialize(peerStore store.Provider, ipResolver ipResolver.Provider, bootNodeAddrs []string) error {
+func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipResolver ipResolver.Provider, bootNodeAddrs []string) error {
 	ctx := context.Background()
 	pkey, _ := crypto.GenerateKey()
-	cfg := &listenConfig{
+	listenCfg := &listenConfig{
 		bootNodeAddrs: bootNodeAddrs,
 		listenAddress: net.IPv4zero,
 		listenPORT:    30304,
 		dbPath:        "",
 		privateKey:    pkey,
 	}
-	return discv5Crawl(ctx, peerStore, ipResolver, cfg)
-}
-
-// discv5Crawl start the crawler
-func discv5Crawl(ctx context.Context, peerStore store.Provider, ipResolver ipResolver.Provider, listenCfg *listenConfig) error {
 	disc, err := startV5(listenCfg)
 	if err != nil {
 		return err
@@ -68,8 +64,10 @@ func discv5Crawl(ctx context.Context, peerStore store.Provider, ipResolver ipRes
 		return err
 	}
 
-	c := newCrawler(disc, peerStore, ipResolver, listenCfg.privateKey, disc.RandomNodes(), host)
-	c.run(ctx)
+	c := newCrawler(disc, peerStore, historyStore, ipResolver, listenCfg.privateKey, disc.RandomNodes(), host, 200)
+	go c.start(ctx)
+	// scheduler for updating peer
+	go c.updatePeer(ctx)
 	return nil
 }
 

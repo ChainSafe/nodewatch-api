@@ -15,7 +15,8 @@ import (
 	"eth2-crawler/graph"
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/resolver/ipdata"
-	mongoStore "eth2-crawler/store/mongo"
+	peerStore "eth2-crawler/store/peerstore/mongo"
+	recordStore "eth2-crawler/store/record/mongo"
 	"eth2-crawler/utils/config"
 	"eth2-crawler/utils/server"
 
@@ -32,9 +33,14 @@ func main() {
 		log.Fatalf("error loading configuration: %s", err.Error())
 	}
 
-	peerStore, err := mongoStore.New(cfg.Database)
+	peerStore, err := peerStore.New(cfg.Database)
 	if err != nil {
 		log.Fatalf("error Initializing the peer store: %s", err.Error())
+	}
+
+	historyStore, err := recordStore.New(cfg.Database)
+	if err != nil {
+		log.Fatalf("error Initializing the record store: %s", err.Error())
 	}
 
 	resolverService, err := ipdata.New(cfg.Resolver.APIKey, time.Duration(cfg.Resolver.Timeout)*time.Second)
@@ -43,7 +49,7 @@ func main() {
 	}
 
 	// TODO collect config from a config files or from command args and pass to Start()
-	go crawler.Start(peerStore, resolverService)
+	go crawler.Start(peerStore, historyStore, resolverService)
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(peerStore)}))
 

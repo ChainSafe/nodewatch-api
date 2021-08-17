@@ -7,11 +7,12 @@ package mongo
 import (
 	"context"
 	"errors"
+	"eth2-crawler/store/peerstore"
 	"fmt"
 	"time"
 
 	"eth2-crawler/models"
-	"eth2-crawler/store"
+
 	"eth2-crawler/utils/config"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -30,7 +31,7 @@ type mongoStore struct {
 func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
 	_, err := s.View(ctx, peer.ID)
 	if err != nil {
-		if errors.Is(err, store.ErrPeerNotFound) {
+		if errors.Is(err, peerstore.ErrPeerNotFound) {
 			return s.Create(ctx, peer)
 		}
 		return err
@@ -40,8 +41,15 @@ func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
 }
 
 func (s *mongoStore) Create(ctx context.Context, peer *models.Peer) error {
-	_, err := s.coll.InsertOne(ctx, peer, options.InsertOne())
-	return err
+	_, err := s.View(ctx, peer.ID)
+	if err != nil {
+		if errors.Is(err, peerstore.ErrPeerNotFound) {
+			_, err = s.coll.InsertOne(ctx, peer)
+			return err
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
@@ -49,6 +57,17 @@ func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
 		{Key: "_id", Value: peer.ID},
 	}
 	_, err := s.coll.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: peer}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *mongoStore) Delete(ctx context.Context, peer *models.Peer) error {
+	filter := bson.D{
+		{Key: "_id", Value: peer.ID},
+	}
+	_, err := s.coll.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -63,7 +82,7 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 	err := s.coll.FindOne(ctx, filter).Decode(res)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, store.ErrPeerNotFound
+			return nil, peerstore.ErrPeerNotFound
 		}
 		return nil, err
 	}
@@ -74,7 +93,32 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 // Todo: accept filter and find options to get limited information
 func (s *mongoStore) ViewAll(ctx context.Context) ([]*models.Peer, error) {
 	var peers []*models.Peer
-	cursor, err := s.coll.Find(ctx, bson.D{{}})
+	cursor, err := s.coll.Find(ctx, bson.D{{Key: "is_connectable", Value: true}})
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		peer := new(models.Peer)
+		err := cursor.Decode(peer)
+		if err != nil {
+			return nil, err
+		}
+
+		peers = append(peers, peer)
+	}
+	return peers, nil
+}
+
+func (s *mongoStore) ListForJob(ctx context.Context, lastUpdated time.Duration, limit int) ([]*models.Peer, error) {
+	var peers []*models.Peer
+	timeToSkip := time.Now().Add(-lastUpdated).Unix()
+	opts := options.Find()
+	opts.SetLimit(int64(limit))
+	opts.SetSort(bson.D{{Key: "last_updated", Value: 1}})
+	filter := bson.D{{Key: "last_updated", Value: bson.D{{Key: "$lt", Value: timeToSkip}}}}
+	cursor, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +149,9 @@ func (s *mongoStore) AggregateByAgentName(ctx context.Context) ([]*models.Aggreg
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
+		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: true}}}},
 	}
 
 	cursor, err := s.coll.Aggregate(ctx, query)
@@ -143,6 +190,9 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.Cl
 				{Key: "versionCount", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
+		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: true}}}},
 		bson.D{
 			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: "$_id.client"},
@@ -190,6 +240,9 @@ func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
+		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: true}}}},
 	}
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
@@ -218,6 +271,9 @@ func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.Aggregat
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
+		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: true}}}},
 	}
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
@@ -273,7 +329,7 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 }
 
 // New creates new instance of Entry Store based on MongoDB
-func New(cfg *config.Database) (store.Provider, error) {
+func New(cfg *config.Database) (peerstore.Provider, error) {
 	timeout := time.Duration(cfg.Timeout) * time.Second
 	opts := options.Client()
 

@@ -15,3 +15,14 @@ type ClientVersionAggregation struct {
 	Count    int              `json:"count"`
 	Versions []*AggregateData `json:"versions"`
 }
+
+// HistoryRequest represent the required field to view history
+type HistoryRequest struct {
+	LastDays int `json:"last_days"`
+}
+
+type HistoryCount struct {
+	Time        int64 `json:"time"`
+	TotalNodes  int   `json:"total_nodes"`
+	SyncedNodes int   `json:"synced_nodes"`
+}

@@ -6,14 +6,13 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"eth2-crawler/crawler/p2p"
 	reqresp "eth2-crawler/crawler/rpc/request"
 	"eth2-crawler/crawler/util"
 	"eth2-crawler/models"
 	ipResolver "eth2-crawler/resolver"
-	"eth2-crawler/store"
-	"fmt"
+	"eth2-crawler/store/peerstore"
+	"eth2-crawler/store/record"
 	"time"
 
 	"github.com/protolambda/zrnt/eth2/beacon/common"
@@ -23,13 +22,16 @@ import (
 )
 
 type crawler struct {
-	disc       resolver
-	peerStore  store.Provider
-	ipResolver ipResolver.Provider
-	iter       enode.Iterator
-	nodeCh     chan *enode.Node
-	privateKey *ecdsa.PrivateKey
-	host       p2p.Host
+	disc            resolver
+	peerStore       peerstore.Provider
+	historyStore    record.Provider
+	ipResolver      ipResolver.Provider
+	iter            enode.Iterator
+	nodeCh          chan *enode.Node
+	privateKey      *ecdsa.PrivateKey
+	host            p2p.Host
+	jobs            chan *models.Peer
+	jobsConcurrency int
 }
 
 // resolver holds methods of discovery v5
@@ -38,31 +40,35 @@ type resolver interface {
 }
 
 // newCrawler inits new crawler service
-func newCrawler(disc resolver, peerStore store.Provider, ipResolver ipResolver.Provider, privateKey *ecdsa.PrivateKey, iter enode.Iterator, host p2p.Host) *crawler {
+func newCrawler(disc resolver, peerStore peerstore.Provider, historyStore record.Provider,
+	ipResolver ipResolver.Provider, privateKey *ecdsa.PrivateKey, iter enode.Iterator,
+	host p2p.Host, jobConcurrency int) *crawler {
 	c := &crawler{
-		disc:       disc,
-		peerStore:  peerStore,
-		ipResolver: ipResolver,
-		privateKey: privateKey,
-		iter:       iter,
-		nodeCh:     make(chan *enode.Node),
-		host:       host,
+		disc:            disc,
+		peerStore:       peerStore,
+		historyStore:    historyStore,
+		ipResolver:      ipResolver,
+		privateKey:      privateKey,
+		iter:            iter,
+		nodeCh:          make(chan *enode.Node),
+		host:            host,
+		jobs:            make(chan *models.Peer, jobConcurrency),
+		jobsConcurrency: jobConcurrency,
 	}
 	return c
 }
 
-// run runs the crawler
-func (c *crawler) run(ctx context.Context) {
+// start runs the crawler
+func (c *crawler) start(ctx context.Context) {
 	doneCh := make(chan enode.Iterator)
 	go c.runIterator(ctx, doneCh, c.iter)
 	for {
 		select {
 		case n := <-c.nodeCh:
-			c.collectNodeInfo(n)
+			c.storePeer(ctx, n)
 		case <-doneCh:
 			// crawling finished
 			log.Info("finished iterator")
-			fmt.Println("finished iterator")
 			return
 		}
 	}
@@ -80,7 +86,7 @@ func (c *crawler) runIterator(ctx context.Context, doneCh chan enode.Iterator, i
 	}
 }
 
-func (c *crawler) collectNodeInfo(node *enode.Node) {
+func (c *crawler) storePeer(ctx context.Context, node *enode.Node) {
 	// only consider the node having tcp port exported
 	if node.TCP() == 0 {
 		return
@@ -97,18 +103,100 @@ func (c *crawler) collectNodeInfo(node *enode.Node) {
 	if err != nil {
 		return
 	}
-
-	go c.collectNodeInfoRetryer(peer)
+	// save to db if not exists
+	err = c.peerStore.Create(ctx, peer)
+	if err != nil {
+		log.Error("err inserting peer", log.Ctx{"err": err, "peer": peer.String()})
+	}
 }
 
-func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
+func (c *crawler) updatePeer(ctx context.Context) {
+	c.runBGWorkersPool(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Error("update peer job context was cancelled", log.Ctx{"err": ctx.Err()})
+		default:
+			c.selectPendingAndExecute(ctx)
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func (c *crawler) selectPendingAndExecute(ctx context.Context) {
+	// get peers that was updated 24 hours ago
+	reqs, err := c.peerStore.ListForJob(ctx, time.Hour*24, c.jobsConcurrency)
+	if err != nil {
+		log.Error("error getting list from peerstore", log.Ctx{"err": err})
+		return
+	}
+	for _, req := range reqs {
+		select {
+		case <-ctx.Done():
+			log.Error("update selector stopped", log.Ctx{"err": ctx.Err()})
+			return
+		default:
+			c.jobs <- req
+		}
+	}
+}
+
+func (c *crawler) runBGWorkersPool(ctx context.Context) {
+	for i := 0; i < c.jobsConcurrency; i++ {
+		go c.bgWorker(ctx)
+	}
+}
+
+func (c *crawler) bgWorker(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Error("context cancelled", log.Ctx{"err": ctx.Err()})
+			return
+		case req := <-c.jobs:
+			c.updatePeerInfo(ctx, req)
+		}
+	}
+}
+
+func (c *crawler) updatePeerInfo(ctx context.Context, peer *models.Peer) {
+	// update geolocation
+	if peer.GeoLocation == nil {
+		c.updateGeolocation(ctx, peer)
+	}
+	// update connection status, agent version, sync status
+	isConnectable := c.collectNodeInfoRetryer(ctx, peer)
+	if isConnectable {
+		peer.SetConnectionStatus(true)
+		peer.Score = models.ScoreGood
+		peer.LastConnected = time.Now().Unix()
+	} else {
+		peer.Score--
+	}
+	// remove the node if it has bad score
+	if peer.Score <= models.ScoreBad {
+		log.Info("deleting node for bad score", log.Ctx{"peer_id": peer.ID})
+		err := c.peerStore.Delete(ctx, peer)
+		if err != nil {
+			log.Error("failed on deleting from peerstore", log.Ctx{"err": err})
+		}
+		return
+	}
+	peer.LastUpdated = time.Now().Unix()
+	err := c.peerStore.Update(ctx, peer)
+	if err != nil {
+		log.Error("failed on updating peerstore", log.Ctx{"err": err})
+	}
+}
+
+func (c *crawler) collectNodeInfoRetryer(ctx context.Context, peer *models.Peer) bool {
 	count := 0
 	var err error
 	var ag, pv string
 	for count < 20 {
 		time.Sleep(time.Second * 5)
 		count++
-		ctx := context.Background()
+
 		err = c.host.Connect(ctx, *peer.GetPeerInfo())
 		if err != nil {
 			continue
@@ -132,71 +220,27 @@ func (c *crawler) collectNodeInfoRetryer(peer *models.Peer) {
 		} else {
 			peer.SetProtocolVersion(pv)
 		}
-
-		log.Info("successfully collected all info", peer.Log())
-		// successfully got all the node info's
-		peer.SetConnectionStatus(true)
-
 		// set sync status
 		peer.SetSyncStatus(int64(status.HeadSlot))
-
-		var oldPeer *models.Peer
-		oldPeer, err = c.peerStore.View(ctx, peer.ID)
-		if err != nil {
-			if errors.Is(err, store.ErrPeerNotFound) {
-				c.savePeerInformation(ctx, peer)
-				return
-			}
-			log.Error("failed to view from store", log.Ctx{"error": err})
-			return
-		}
-
-		c.updatePeerInformation(ctx, peer, oldPeer)
-		return
+		log.Info("successfully collected all info", peer.Log())
+		return true
 	}
-
 	// unsuccessful
 	log.Error("failed on retryer", log.Ctx{
 		"attempt": count,
 		"error":   err,
 	})
+	return false
 }
 
-func (c *crawler) savePeerInformation(ctx context.Context, peer *models.Peer) {
+func (c *crawler) updateGeolocation(ctx context.Context, peer *models.Peer) {
 	geoLoc, err := c.ipResolver.GetGeoLocation(ctx, peer.IP)
 	if err != nil {
 		log.Error("unable to get geo information", log.Ctx{
 			"error":   err,
 			"ip_addr": peer.IP,
 		})
-	} else {
-		peer.SetGeoLocation(geoLoc)
+		return
 	}
-
-	err = c.peerStore.Create(ctx, peer)
-	if err != nil {
-		log.Error("unable to save peer information to store", log.Ctx{"error": err})
-	}
-}
-
-func (c *crawler) updatePeerInformation(ctx context.Context, new *models.Peer, old *models.Peer) {
-	// TODO: update the IP  details after certain interval
-	if new.IP != old.IP || old.GeoLocation == nil {
-		geoLoc, err := c.ipResolver.GetGeoLocation(ctx, new.IP)
-		if err != nil {
-			log.Error("unable to get geo information", log.Ctx{
-				"error":   err,
-				"ip_addr": new.IP,
-			})
-		} else {
-			new.SetGeoLocation(geoLoc)
-		}
-	} else {
-		new.SetGeoLocation(old.GeoLocation)
-	}
-
-	err := c.peerStore.Update(ctx, new)
-	if err != nil {
-		log.Error("unable to update peer information to store", log.Ctx{"error": err})
-	}
+	peer.SetGeoLocation(geoLoc)
 }

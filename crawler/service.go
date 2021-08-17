@@ -7,7 +7,8 @@ package crawler
 import (
 	"eth2-crawler/crawler/crawl"
 	ipResolver "eth2-crawler/resolver"
-	"eth2-crawler/store"
+	"eth2-crawler/store/peerstore"
+	"eth2-crawler/store/record"
 
 	"github.com/ethereum/go-ethereum/log"
 
@@ -15,7 +16,7 @@ import (
 )
 
 // Start starts the crawler service
-func Start(peerStore store.Provider, ipResolver ipResolver.Provider) {
+func Start(peerStore peerstore.Provider, historyStore record.Provider, ipResolver ipResolver.Provider) {
 	h := log.CallerFileHandler(log.StdoutHandler)
 	log.Root().SetHandler(h)
 
@@ -24,6 +25,15 @@ func Start(peerStore store.Provider, ipResolver ipResolver.Provider) {
 	)
 	log.Root().SetHandler(handler)
 
-	err := crawl.Initialize(peerStore, ipResolver, params.V5Bootnodes)
-	panic(err)
+	// add scheduler for updating history store
+
+	err := crawl.Initialize(peerStore, historyStore, ipResolver, params.V5Bootnodes)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InsertToHistory(peerStore peerstore.Provider, historyStore record.Provider) {
+	// get count
+	peerStore.AggregateByCountry()
 }

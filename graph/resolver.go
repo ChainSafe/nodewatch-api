@@ -4,16 +4,16 @@
 // Package graph contans graph related code
 package graph
 
-import "eth2-crawler/store"
+import "eth2-crawler/store/peerstore"
 
 // This file will not be regenerated automatically.
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	peerStore store.Provider
+	peerStore peerstore.Provider
 }
 
-func NewResolver(peerStore store.Provider) *Resolver {
+func NewResolver(peerStore peerstore.Provider) *Resolver {
 	return &Resolver{peerStore: peerStore}
 }
