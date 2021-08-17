@@ -60,13 +60,21 @@ type UserAgent struct {
 type UsageType string
 
 const (
-	UsageTypeNil         UsageType = ""
-	UsageTypeHosting     UsageType = "hosting"
-	UsageTypeResidential UsageType = "residential"
-	UsageTypeBusiness    UsageType = "business"
-	UsageTypeEducation   UsageType = "education"
-	UsageTypeGovernment  UsageType = "government"
-	UsageTypeMilitary    UsageType = "military"
+	UsageTypeNil            UsageType = ""
+	UsageTypeHosting        UsageType = "hosting"
+	UsageTypeResidential    UsageType = "residential"
+	UsageTypeNonResidential UsageType = "non-residential"
+	UsageTypeBusiness       UsageType = "business"
+	UsageTypeEducation      UsageType = "education"
+	UsageTypeGovernment     UsageType = "government"
+	UsageTypeMilitary       UsageType = "military"
+)
+
+type Score int
+
+const (
+	ScoreGood Score = 10
+	ScoreBad  Score = 0
 )
 
 // ASN holds the Autonomous system details
@@ -88,12 +96,11 @@ type GeoLocation struct {
 	Longitude float64 `json:"longitude" bson:"longitude"`
 }
 
-type Score int
-
-const (
-	ScoreGood Score = 10
-	ScoreBad  Score = 0
-)
+// Sync holds peer sync related info
+type Sync struct {
+	Status   bool `json:"status" bson:"status"`
+	Distance int  `json:"distance" bson:"distance"` // sync distance in percentage
+}
 
 // Peer holds all information of a eth2 peer
 type Peer struct {
@@ -113,11 +120,9 @@ type Peer struct {
 
 	ProtocolVersion string       `json:"protocol_version,omitempty" bson:"protocol_version"`
 	UserAgent       *UserAgent   `json:"user_agent,omitempty" bson:"user_agent"`
-	GeoLocation     *GeoLocation `json:"geolocation" bson:"geolocation" bson:"geo_location"`
+	GeoLocation     *GeoLocation `json:"geo_location" bson:"geo_location"`
 
-	IsSynced     bool  `json:"is_synced" bson:"is_synced"`
-	SyncDistance int64 `json:"sync_distance" bson:"sync_distance"`
-
+	Sync  *Sync `json:"sync" bson:"sync"`
 	Score Score `json:"score" bson:"score"`
 
 	IsConnectable bool  `json:"is_connectable" bson:"is_connectable"`
@@ -246,13 +251,18 @@ func (p *Peer) SetConnectionStatus(status bool) {
 
 // SetSyncStatus sets the sync status of a peer
 func (p *Peer) SetSyncStatus(block int64) {
-	if util.CurrentBlock()-block <= blockIgnoreThreshold {
-		p.IsSynced = true
-		p.SyncDistance = 0
+	cb := util.CurrentBlock()
+	if cb-block <= blockIgnoreThreshold {
+		p.Sync = &Sync{
+			Status:   true,
+			Distance: 0,
+		}
 	} else {
-		p.SyncDistance = util.CurrentBlock() - block
+		p.Sync = &Sync{
+			Status:   false,
+			Distance: int(((cb - block) * 100) / cb),
+		}
 	}
-
 }
 
 // SetGeoLocation sets the geolocation information

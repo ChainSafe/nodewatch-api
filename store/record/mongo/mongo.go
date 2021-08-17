@@ -1,3 +1,7 @@
+// Copyright 2021 ChainSafe Systems
+// SPDX-License-Identifier: LGPL-3.0-only
+
+// Package mongo implements all the store methods
 package mongo
 
 import (
@@ -59,10 +63,11 @@ func (s mongoStore) Create(ctx context.Context, history *models.History) error {
 	return err
 }
 
-func (s mongoStore) GetHistory(ctx context.Context, request *models.HistoryRequest) ([]*models.HistoryCount, error) {
-	timeToStart := time.Now().Add(-time.Duration(request.LastDays) * 24 * time.Hour)
-	filter := bson.D{{Key: "time", Value: bson.D{{Key: "$gt", Value: timeToStart.Unix()}}}}
-
+func (s mongoStore) GetHistory(ctx context.Context, start int64, end int64) ([]*models.HistoryCount, error) {
+	filter := bson.D{{Key: "$and", Value: bson.A{
+		bson.D{{Key: "time", Value: bson.D{{Key: "gt", Value: start}}}},
+		bson.D{{Key: "time", Value: bson.D{{Key: "lt", Value: end}}}},
+	}}}
 	cursor, err := s.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err

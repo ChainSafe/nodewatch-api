@@ -115,7 +115,7 @@ func (c *crawler) updatePeer(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Error("update peer job context was cancelled", log.Ctx{"err": ctx.Err()})
+			log.Error("update peer job context was canceled", log.Ctx{"err": ctx.Err()})
 		default:
 			c.selectPendingAndExecute(ctx)
 		}
@@ -151,7 +151,7 @@ func (c *crawler) bgWorker(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Error("context cancelled", log.Ctx{"err": ctx.Err()})
+			log.Error("context canceled", log.Ctx{"err": ctx.Err()})
 			return
 		case req := <-c.jobs:
 			c.updatePeerInfo(ctx, req)
@@ -243,4 +243,19 @@ func (c *crawler) updateGeolocation(ctx context.Context, peer *models.Peer) {
 		return
 	}
 	peer.SetGeoLocation(geoLoc)
+}
+
+func (c *crawler) insertToHistory() {
+	ctx := context.Background()
+	// get count
+	aggregateData, err := c.peerStore.AggregateBySyncStatus(ctx, 15)
+	if err != nil {
+		log.Error("error getting sync status", log.Ctx{"err": err})
+	}
+
+	history := models.NewHistory(aggregateData.Synced, aggregateData.Total)
+	err = c.historyStore.Create(ctx, history)
+	if err != nil {
+		log.Error("error inserting sync status", log.Ctx{"err": err})
+	}
 }

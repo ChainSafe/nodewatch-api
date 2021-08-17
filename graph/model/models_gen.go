@@ -22,3 +22,9 @@ type HeatmapData struct {
 	City        string  `json:"city"`
 	Country     string  `json:"country"`
 }
+
+type NodeStats struct {
+	TotalNodes             int     `json:"totalNodes"`
+	NodeSyncedPercentage   float64 `json:"nodeSyncedPercentage"`
+	NodeUnsyncedPercentage float64 `json:"nodeUnsyncedPercentage"`
+}

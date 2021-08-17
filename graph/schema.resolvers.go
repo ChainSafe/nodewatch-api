@@ -8,8 +8,10 @@ package graph
 
 import (
 	"context"
+
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
+	svcModels "eth2-crawler/models"
 )
 
 func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.AggregateData, error) {
@@ -65,13 +67,23 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	if err != nil {
 		return nil, err
 	}
-
-	result := []*model.AggregateData{}
+	// return only residential and non-residential network type
+	result := []*model.AggregateData{
+		{
+			Name:  string(svcModels.UsageTypeResidential),
+			Count: 0,
+		},
+		{
+			Name:  string(svcModels.UsageTypeNonResidential),
+			Count: 0,
+		},
+	}
 	for i := range aggregateData {
-		result = append(result, &model.AggregateData{
-			Name:  aggregateData[i].Name,
-			Count: aggregateData[i].Count,
-		})
+		if aggregateData[i].Name == string(svcModels.UsageTypeResidential) {
+			result[0].Count += aggregateData[i].Count
+		} else {
+			result[1].Count += aggregateData[i].Count
+		}
 	}
 	return result, nil
 }
@@ -122,6 +134,18 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 		}
 	}
 	return result, nil
+}
+
+func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
+	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx, 15)
+	if err != nil {
+		return nil, err
+	}
+	return &model.NodeStats{
+		TotalNodes:             aggregateData.Total,
+		NodeSyncedPercentage:   (float64(aggregateData.Synced) / float64(aggregateData.Total)) * 100,
+		NodeUnsyncedPercentage: (float64(aggregateData.Unsynced) / float64(aggregateData.Total)) * 100,
+	}, nil
 }
 
 // Query returns generated.QueryResolver implementation.

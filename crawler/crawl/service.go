@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/robfig/cron/v3"
+
 	"eth2-crawler/crawler/p2p"
 	ipResolver "eth2-crawler/resolver"
 
@@ -68,6 +70,14 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 	go c.start(ctx)
 	// scheduler for updating peer
 	go c.updatePeer(ctx)
+
+	// add scheduler for updating history store
+	scheduler := cron.New()
+	_, err = scheduler.AddFunc("@every 0h1m0s", c.insertToHistory)
+	if err != nil {
+		return err
+	}
+	scheduler.Start()
 	return nil
 }
 

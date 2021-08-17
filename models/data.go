@@ -3,6 +3,11 @@
 
 package models
 
+const (
+	SyncTypeSynced   = "synced"
+	SyncTypeUnsynced = "unsynced"
+)
+
 // AggregateData represents data of group by queries
 type AggregateData struct {
 	Name  string `json:"name"`
@@ -16,13 +21,14 @@ type ClientVersionAggregation struct {
 	Versions []*AggregateData `json:"versions"`
 }
 
-// HistoryRequest represent the required field to view history
-type HistoryRequest struct {
-	LastDays int `json:"last_days"`
-}
-
 type HistoryCount struct {
 	Time        int64 `json:"time"`
 	TotalNodes  int   `json:"total_nodes"`
 	SyncedNodes int   `json:"synced_nodes"`
+}
+
+type SyncAggregateData struct {
+	Total    int `json:"total" bson:"total"`
+	Synced   int `json:"synced" bson:"synced"`
+	Unsynced int `json:"unsynced" bson:"unsynced"`
 }

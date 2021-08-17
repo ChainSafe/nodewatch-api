@@ -11,7 +11,6 @@ import (
 	"eth2-crawler/store/record"
 
 	"github.com/ethereum/go-ethereum/log"
-
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -25,15 +24,8 @@ func Start(peerStore peerstore.Provider, historyStore record.Provider, ipResolve
 	)
 	log.Root().SetHandler(handler)
 
-	// add scheduler for updating history store
-
 	err := crawl.Initialize(peerStore, historyStore, ipResolver, params.V5Bootnodes)
 	if err != nil {
 		panic(err)
 	}
-}
-
-func InsertToHistory(peerStore peerstore.Provider, historyStore record.Provider) {
-	// get count
-	peerStore.AggregateByCountry()
 }
