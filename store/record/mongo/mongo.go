@@ -65,8 +65,8 @@ func (s mongoStore) Create(ctx context.Context, history *models.History) error {
 
 func (s mongoStore) GetHistory(ctx context.Context, start int64, end int64) ([]*models.HistoryCount, error) {
 	filter := bson.D{{Key: "$and", Value: bson.A{
-		bson.D{{Key: "time", Value: bson.D{{Key: "gt", Value: start}}}},
-		bson.D{{Key: "time", Value: bson.D{{Key: "lt", Value: end}}}},
+		bson.D{{Key: "time", Value: bson.D{{Key: "$gt", Value: start}}}},
+		bson.D{{Key: "time", Value: bson.D{{Key: "$lt", Value: end}}}},
 	}}}
 	cursor, err := s.coll.Find(ctx, filter)
 	if err != nil {

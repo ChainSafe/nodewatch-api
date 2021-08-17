@@ -357,7 +357,11 @@ type aggregateSyncData struct {
 func (s *mongoStore) AggregateBySyncStatus(ctx context.Context, percentageUnsynced int) (*models.SyncAggregateData, error) {
 	total := bson.A{bson.D{{Key: "$count", Value: "count"}}}
 	synced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: true}}}}, bson.D{{Key: "$count", Value: "count"}}}
-	unsynced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.distance", Value: bson.D{{Key: "$gt", Value: percentageUnsynced}}}}}},
+	unsynced := bson.A{bson.D{{Key: "$match", Value: bson.D{
+		{Key: "$and", Value: bson.A{
+			bson.D{{Key: "sync.status", Value: false}},
+			bson.D{{Key: "sync.distance", Value: bson.D{{Key: "$gt", Value: percentageUnsynced}}}},
+		}}}}},
 		bson.D{{Key: "$count", Value: "count"}}}
 
 	facetStage := bson.D{{Key: "$facet", Value: bson.D{

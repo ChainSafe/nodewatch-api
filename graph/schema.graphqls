@@ -15,6 +15,13 @@ type NodeStats {
   nodeUnsyncedPercentage: Float!
 }
 
+type NodeStatsOverTime {
+  time: Float!
+  totalNodes: Int!
+  syncedNodes: Int!
+  unsyncedNodes: Int!
+}
+
 type HeatmapData {
   networkType: String!
 	clientType:  String!
@@ -32,5 +39,6 @@ type Query {
   aggregateByNetwork: [AggregateData!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
-  getNodeStats: NodeStats!
+  getNodeStats(unsyncedPercentage: Int!): NodeStats!
+  getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
 }

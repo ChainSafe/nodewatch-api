@@ -51,7 +51,7 @@ func main() {
 	// TODO collect config from a config files or from command args and pass to Start()
 	go crawler.Start(peerStore, historyStore, resolverService)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(peerStore)}))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(peerStore, historyStore)}))
 
 	router := http.NewServeMux()
 	// TODO: make playground accessible only in Dev mode

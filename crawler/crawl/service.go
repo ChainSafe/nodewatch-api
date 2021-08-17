@@ -73,7 +73,7 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 
 	// add scheduler for updating history store
 	scheduler := cron.New()
-	_, err = scheduler.AddFunc("@every 0h1m0s", c.insertToHistory)
+	_, err = scheduler.AddFunc("@every 24h0m0s", c.insertToHistory)
 	if err != nil {
 		return err
 	}

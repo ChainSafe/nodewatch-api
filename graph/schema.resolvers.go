@@ -1,6 +1,3 @@
-// Copyright 2021 ChainSafe Systems
-// SPDX-License-Identifier: LGPL-3.0-only
-
 package graph
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
@@ -8,7 +5,6 @@ package graph
 
 import (
 	"context"
-
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
 	svcModels "eth2-crawler/models"
@@ -136,8 +132,8 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 	return result, nil
 }
 
-func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
-	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx, 15)
+func (r *queryResolver) GetNodeStats(ctx context.Context, unsyncedPercentage int) (*model.NodeStats, error) {
+	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx, unsyncedPercentage)
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +142,23 @@ func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, err
 		NodeSyncedPercentage:   (float64(aggregateData.Synced) / float64(aggregateData.Total)) * 100,
 		NodeUnsyncedPercentage: (float64(aggregateData.Unsynced) / float64(aggregateData.Total)) * 100,
 	}, nil
+}
+
+func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error) {
+	data, err := r.historyStore.GetHistory(ctx, int64(start), int64(end))
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.NodeStatsOverTime, 0)
+	for _, v := range data {
+		result = append(result, &model.NodeStatsOverTime{
+			Time:          float64(v.Time),
+			TotalNodes:    v.TotalNodes,
+			SyncedNodes:   v.SyncedNodes,
+			UnsyncedNodes: v.TotalNodes - v.SyncedNodes,
+		})
+	}
+	return result, nil
 }
 
 // Query returns generated.QueryResolver implementation.

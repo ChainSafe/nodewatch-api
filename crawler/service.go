@@ -11,6 +11,7 @@ import (
 	"eth2-crawler/store/record"
 
 	"github.com/ethereum/go-ethereum/log"
+
 	"github.com/ethereum/go-ethereum/params"
 )
 
