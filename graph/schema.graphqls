@@ -22,6 +22,12 @@ type NodeStatsOverTime {
   unsyncedNodes: Int!
 }
 
+type RegionalStats {
+  totalParticipatingCountries: Int!
+  residentialNodePercentage: Float!
+  nonresidentialNodePercentage: Float!
+}
+
 type HeatmapData {
   networkType: String!
 	clientType:  String!
@@ -41,4 +47,5 @@ type Query {
   getHeatmapData: [HeatmapData!]!
   getNodeStats(unsyncedPercentage: Int!): NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
+  getRegionalStats: RegionalStats!
 }

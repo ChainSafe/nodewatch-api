@@ -35,3 +35,9 @@ type NodeStatsOverTime struct {
 	SyncedNodes   int     `json:"syncedNodes"`
 	UnsyncedNodes int     `json:"unsyncedNodes"`
 }
+
+type RegionalStats struct {
+	TotalParticipatingCountries  int     `json:"totalParticipatingCountries"`
+	ResidentialNodePercentage    float64 `json:"residentialNodePercentage"`
+	NonresidentialNodePercentage float64 `json:"nonresidentialNodePercentage"`
+}

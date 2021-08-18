@@ -85,6 +85,13 @@ type ComplexityRoot struct {
 		GetHeatmapData             func(childComplexity int) int
 		GetNodeStats               func(childComplexity int, unsyncedPercentage int) int
 		GetNodeStatsOverTime       func(childComplexity int, start float64, end float64) int
+		GetRegionalStats           func(childComplexity int) int
+	}
+
+	RegionalStats struct {
+		NonresidentialNodePercentage func(childComplexity int) int
+		ResidentialNodePercentage    func(childComplexity int) int
+		TotalParticipatingCountries  func(childComplexity int) int
 	}
 }
 
@@ -97,6 +104,7 @@ type QueryResolver interface {
 	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
 	GetNodeStats(ctx context.Context, unsyncedPercentage int) (*model.NodeStats, error)
 	GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error)
+	GetRegionalStats(ctx context.Context) (*model.RegionalStats, error)
 }
 
 type executableSchema struct {
@@ -313,6 +321,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetNodeStatsOverTime(childComplexity, args["start"].(float64), args["end"].(float64)), true
 
+	case "Query.getRegionalStats":
+		if e.complexity.Query.GetRegionalStats == nil {
+			break
+		}
+
+		return e.complexity.Query.GetRegionalStats(childComplexity), true
+
+	case "RegionalStats.nonresidentialNodePercentage":
+		if e.complexity.RegionalStats.NonresidentialNodePercentage == nil {
+			break
+		}
+
+		return e.complexity.RegionalStats.NonresidentialNodePercentage(childComplexity), true
+
+	case "RegionalStats.residentialNodePercentage":
+		if e.complexity.RegionalStats.ResidentialNodePercentage == nil {
+			break
+		}
+
+		return e.complexity.RegionalStats.ResidentialNodePercentage(childComplexity), true
+
+	case "RegionalStats.totalParticipatingCountries":
+		if e.complexity.RegionalStats.TotalParticipatingCountries == nil {
+			break
+		}
+
+		return e.complexity.RegionalStats.TotalParticipatingCountries(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -387,6 +423,12 @@ type NodeStatsOverTime {
   unsyncedNodes: Int!
 }
 
+type RegionalStats {
+  totalParticipatingCountries: Int!
+  residentialNodePercentage: Float!
+  nonresidentialNodePercentage: Float!
+}
+
 type HeatmapData {
   networkType: String!
 	clientType:  String!
@@ -406,6 +448,7 @@ type Query {
   getHeatmapData: [HeatmapData!]!
   getNodeStats(unsyncedPercentage: Int!): NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
+  getRegionalStats: RegionalStats!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1465,6 +1508,41 @@ func (ec *executionContext) _Query_getNodeStatsOverTime(ctx context.Context, fie
 	return ec.marshalNNodeStatsOverTime2ᚕᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐNodeStatsOverTimeᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_getRegionalStats(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetRegionalStats(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.RegionalStats)
+	fc.Result = res
+	return ec.marshalNRegionalStats2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐRegionalStats(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1534,6 +1612,111 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RegionalStats_totalParticipatingCountries(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RegionalStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalParticipatingCountries, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RegionalStats_residentialNodePercentage(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RegionalStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ResidentialNodePercentage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RegionalStats_nonresidentialNodePercentage(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RegionalStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NonresidentialNodePercentage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2963,10 +3146,61 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "getRegionalStats":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getRegionalStats(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var regionalStatsImplementors = []string{"RegionalStats"}
+
+func (ec *executionContext) _RegionalStats(ctx context.Context, sel ast.SelectionSet, obj *model.RegionalStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, regionalStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RegionalStats")
+		case "totalParticipatingCountries":
+			out.Values[i] = ec._RegionalStats_totalParticipatingCountries(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "residentialNodePercentage":
+			out.Values[i] = ec._RegionalStats_residentialNodePercentage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nonresidentialNodePercentage":
+			out.Values[i] = ec._RegionalStats_nonresidentialNodePercentage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3468,6 +3702,20 @@ func (ec *executionContext) marshalNNodeStatsOverTime2ᚖeth2ᚑcrawlerᚋgraph�
 		return graphql.Null
 	}
 	return ec._NodeStatsOverTime(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRegionalStats2eth2ᚑcrawlerᚋgraphᚋmodelᚐRegionalStats(ctx context.Context, sel ast.SelectionSet, v model.RegionalStats) graphql.Marshaler {
+	return ec._RegionalStats(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRegionalStats2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐRegionalStats(ctx context.Context, sel ast.SelectionSet, v *model.RegionalStats) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._RegionalStats(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
