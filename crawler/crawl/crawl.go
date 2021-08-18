@@ -96,7 +96,7 @@ func (c *crawler) storePeer(ctx context.Context, node *enode.Node) {
 	if err != nil { // not eth2 nodes
 		return
 	}
-	log.Info("found a eth2 node", log.Ctx{"node": node})
+	log.Debug("found a eth2 node", log.Ctx{"node": node})
 
 	// get basic info
 	peer, err := models.NewPeer(node, eth2Data)
