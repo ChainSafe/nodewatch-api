@@ -7,11 +7,12 @@ package mongo
 import (
 	"context"
 	"errors"
+	"eth2-crawler/store/peerstore"
 	"fmt"
 	"time"
 
 	"eth2-crawler/models"
-	"eth2-crawler/store"
+
 	"eth2-crawler/utils/config"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -30,7 +31,7 @@ type mongoStore struct {
 func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
 	_, err := s.View(ctx, peer.ID)
 	if err != nil {
-		if errors.Is(err, store.ErrPeerNotFound) {
+		if errors.Is(err, peerstore.ErrPeerNotFound) {
 			return s.Create(ctx, peer)
 		}
 		return err
@@ -40,8 +41,15 @@ func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
 }
 
 func (s *mongoStore) Create(ctx context.Context, peer *models.Peer) error {
-	_, err := s.coll.InsertOne(ctx, peer, options.InsertOne())
-	return err
+	_, err := s.View(ctx, peer.ID)
+	if err != nil {
+		if errors.Is(err, peerstore.ErrPeerNotFound) {
+			_, err = s.coll.InsertOne(ctx, peer)
+			return err
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
@@ -49,6 +57,17 @@ func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
 		{Key: "_id", Value: peer.ID},
 	}
 	_, err := s.coll.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: peer}})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *mongoStore) Delete(ctx context.Context, peer *models.Peer) error {
+	filter := bson.D{
+		{Key: "_id", Value: peer.ID},
+	}
+	_, err := s.coll.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -63,7 +82,7 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 	err := s.coll.FindOne(ctx, filter).Decode(res)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, store.ErrPeerNotFound
+			return nil, peerstore.ErrPeerNotFound
 		}
 		return nil, err
 	}
@@ -74,7 +93,32 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 // Todo: accept filter and find options to get limited information
 func (s *mongoStore) ViewAll(ctx context.Context) ([]*models.Peer, error) {
 	var peers []*models.Peer
-	cursor, err := s.coll.Find(ctx, bson.D{{}})
+	cursor, err := s.coll.Find(ctx, bson.D{{Key: "is_connectable", Value: true}})
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		// create a value into which the single document can be decoded
+		peer := new(models.Peer)
+		err := cursor.Decode(peer)
+		if err != nil {
+			return nil, err
+		}
+
+		peers = append(peers, peer)
+	}
+	return peers, nil
+}
+
+func (s *mongoStore) ListForJob(ctx context.Context, lastUpdated time.Duration, limit int) ([]*models.Peer, error) {
+	var peers []*models.Peer
+	timeToSkip := time.Now().Add(-lastUpdated).Unix()
+	opts := options.Find()
+	opts.SetLimit(int64(limit))
+	opts.SetSort(bson.D{{Key: "last_updated", Value: 1}})
+	filter := bson.D{{Key: "last_updated", Value: bson.D{{Key: "$lt", Value: timeToSkip}}}}
+	cursor, err := s.coll.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +144,14 @@ type aggregateData struct {
 func (s *mongoStore) AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
+			}},
+		},
+
+		bson.D{
 			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$useragent.name"},
+				{Key: "_id", Value: "$user_agent.name"},
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
@@ -112,7 +162,7 @@ func (s *mongoStore) AggregateByAgentName(ctx context.Context) ([]*models.Aggreg
 		return nil, err
 	}
 
-	result := []*models.AggregateData{}
+	var result []*models.AggregateData
 	for cursor.Next(ctx) {
 		// create a value into which the single document can be decoded
 		data := new(aggregateData)
@@ -135,14 +185,21 @@ type clientVersionAggregation struct {
 func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.ClientVersionAggregation, error) {
 	query := mongo.Pipeline{
 		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
+			}},
+		},
+
+		bson.D{
 			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: bson.D{
-					{Key: "client", Value: "$useragent.name"},
-					{Key: "version", Value: "$useragent.version"},
+					{Key: "client", Value: "$user_agent.name"},
+					{Key: "version", Value: "$user_agent.version"},
 				}},
 				{Key: "versionCount", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
+
 		bson.D{
 			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: "$_id.client"},
@@ -164,7 +221,7 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.Cl
 		return nil, err
 	}
 
-	result := []*models.ClientVersionAggregation{}
+	var result []*models.ClientVersionAggregation
 	for cursor.Next(ctx) {
 		// create a value into which the single document can be decoded
 		data := new(clientVersionAggregation)
@@ -185,8 +242,14 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.Cl
 func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
+			}},
+		},
+
+		bson.D{
 			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$useragent.os"},
+				{Key: "_id", Value: "$user_agent.os"},
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
@@ -196,7 +259,7 @@ func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.
 		return nil, err
 	}
 
-	result := []*models.AggregateData{}
+	var result []*models.AggregateData
 	for cursor.Next(ctx) {
 		// create a value into which the single document can be decoded
 		data := new(aggregateData)
@@ -213,8 +276,14 @@ func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.
 func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
+			}},
+		},
+
+		bson.D{
 			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$geolocation.country"},
+				{Key: "_id", Value: "$geo_location.country"},
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
@@ -224,7 +293,7 @@ func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.Aggregat
 		return nil, err
 	}
 
-	result := []*models.AggregateData{}
+	var result []*models.AggregateData
 	for cursor.Next(ctx) {
 		// create a value into which the single document can be decoded
 		data := new(aggregateData)
@@ -243,12 +312,15 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 		bson.D{
 			// avoid aggregation of entries without geolocation information
 			{Key: "$match", Value: bson.D{
-				{Key: "geolocation", Value: bson.D{{Key: "$ne", Value: nil}}},
+				{Key: "$and", Value: bson.A{
+					bson.D{{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}}},
+					bson.D{{Key: "geo_location", Value: bson.D{{Key: "$ne", Value: nil}}}},
+				}},
 			}},
 		},
 		bson.D{
 			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$geolocation.asn.type"},
+				{Key: "_id", Value: "$geo_location.asn.type"},
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			}},
 		},
@@ -258,7 +330,7 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 		return nil, err
 	}
 
-	result := []*models.AggregateData{}
+	var result []*models.AggregateData
 	for cursor.Next(ctx) {
 		// create a value into which the single document can be decoded
 		data := new(aggregateData)
@@ -272,48 +344,66 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 	return result, nil
 }
 
-type syncAggregateData struct {
-	IsSynced bool `json:"_id" bson:"_id"`
-	Count    int  `json:"count" bson:"count"`
+type count struct {
+	Count int `json:"count" bson:"count"`
 }
 
-func (s *mongoStore) AggregateBySyncStatus(ctx context.Context) ([]*models.AggregateData, error) {
+type aggregateSyncData struct {
+	Total    []count `json:"total" bson:"total"`
+	Synced   []count `json:"synced" bson:"synced"`
+	Unsynced []count `json:"unsynced" bson:"unsynced"`
+}
+
+func (s *mongoStore) AggregateBySyncStatus(ctx context.Context, percentageUnsynced int) (*models.SyncAggregateData, error) {
+	total := bson.A{bson.D{{Key: "$count", Value: "count"}}}
+	synced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: true}}}}, bson.D{{Key: "$count", Value: "count"}}}
+	unsynced := bson.A{bson.D{{Key: "$match", Value: bson.D{
+		{Key: "$and", Value: bson.A{
+			bson.D{{Key: "sync.status", Value: false}},
+			bson.D{{Key: "sync.distance", Value: bson.D{{Key: "$gt", Value: percentageUnsynced}}}},
+		}}}}},
+		bson.D{{Key: "$count", Value: "count"}}}
+
+	facetStage := bson.D{{Key: "$facet", Value: bson.D{
+		{Key: "total", Value: total},
+		{Key: "synced", Value: synced},
+		{Key: "unsynced", Value: unsynced}}}}
+
 	query := mongo.Pipeline{
 		bson.D{
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$issynced"},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+			{Key: "$match", Value: bson.D{
+				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
 			}},
 		},
+		facetStage,
 	}
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	result := []*models.AggregateData{}
+	result := new(models.SyncAggregateData)
 	for cursor.Next(ctx) {
-		// create a value into which the single document can be decoded
-		data := new(syncAggregateData)
-		err := cursor.Decode(data)
+		data := aggregateSyncData{}
+		err := cursor.Decode(&data)
 		if err != nil {
 			return nil, err
 		}
-
-		var name string
-		if data.IsSynced {
-			name = models.SyncTypeSynced
-		} else {
-			name = models.SyncTypeUnsynced
+		if len(data.Total) != 0 {
+			result.Total = data.Total[0].Count
 		}
-
-		result = append(result, &models.AggregateData{Name: name, Count: data.Count})
+		if len(data.Synced) != 0 {
+			result.Synced = data.Synced[0].Count
+		}
+		if len(data.Unsynced) != 0 {
+			result.Unsynced = data.Unsynced[0].Count
+		}
 	}
 	return result, nil
 }
 
 // New creates new instance of Entry Store based on MongoDB
-func New(cfg *config.Database) (store.Provider, error) {
+func New(cfg *config.Database) (peerstore.Provider, error) {
 	timeout := time.Duration(cfg.Timeout) * time.Second
 	opts := options.Client()
 

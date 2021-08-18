@@ -20,3 +20,15 @@ type ClientVersionAggregation struct {
 	Count    int              `json:"count"`
 	Versions []*AggregateData `json:"versions"`
 }
+
+type HistoryCount struct {
+	Time        int64 `json:"time"`
+	TotalNodes  int   `json:"total_nodes"`
+	SyncedNodes int   `json:"synced_nodes"`
+}
+
+type SyncAggregateData struct {
+	Total    int `json:"total" bson:"total"`
+	Synced   int `json:"synced" bson:"synced"`
+	Unsynced int `json:"unsynced" bson:"unsynced"`
+}

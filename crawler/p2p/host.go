@@ -110,7 +110,7 @@ func (c *Client) FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peer 
 	*beacon.Status, error) {
 	// use the fork digest same of peer to avoid stream reset
 	status := &beacon.Status{
-		ForkDigest:     peer.Eth2Data.ForkDigest,
+		ForkDigest:     peer.ForkDigest,
 		FinalizedRoot:  beacon.Root{},
 		FinalizedEpoch: 0,
 		HeadRoot:       beacon.Root{},

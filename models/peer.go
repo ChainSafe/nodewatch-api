@@ -60,13 +60,21 @@ type UserAgent struct {
 type UsageType string
 
 const (
-	UsageTypeNil         UsageType = ""
-	UsageTypeHosting     UsageType = "hosting"
-	UsageTypeResidential UsageType = "residential"
-	UsageTypeBusiness    UsageType = "business"
-	UsageTypeEducation   UsageType = "education"
-	UsageTypeGovernment  UsageType = "government"
-	UsageTypeMilitary    UsageType = "military"
+	UsageTypeNil            UsageType = ""
+	UsageTypeHosting        UsageType = "hosting"
+	UsageTypeResidential    UsageType = "residential"
+	UsageTypeNonResidential UsageType = "non-residential"
+	UsageTypeBusiness       UsageType = "business"
+	UsageTypeEducation      UsageType = "education"
+	UsageTypeGovernment     UsageType = "government"
+	UsageTypeMilitary       UsageType = "military"
+)
+
+type Score int
+
+const (
+	ScoreGood Score = 10
+	ScoreBad  Score = 0
 )
 
 // ASN holds the Autonomous system details
@@ -88,27 +96,38 @@ type GeoLocation struct {
 	Longitude float64 `json:"longitude" bson:"longitude"`
 }
 
+// Sync holds peer sync related info
+type Sync struct {
+	Status   bool `json:"status" bson:"status"`
+	Distance int  `json:"distance" bson:"distance"` // sync distance in percentage
+}
+
 // Peer holds all information of a eth2 peer
 type Peer struct {
 	ID     peer.ID `json:"id" bson:"_id"`
 	NodeID string  `json:"node_id" bson:"node_id"`
-	Pubkey string  `json:"pubkey"`
+	Pubkey string  `json:"pubkey" bson:"pubkey"`
 
-	IP      string   `json:"ip"`
-	TCPPort int      `json:"tcp_port"`
-	UDPPort int      `json:"udp_port"`
-	Addrs   []string `json:"addrs,omitempty"`
+	IP      string   `json:"ip" bson:"ip"`
+	TCPPort int      `json:"tcp_port" bson:"tcp_port"`
+	UDPPort int      `json:"udp_port" bson:"udp_port"`
+	Addrs   []string `json:"addrs,omitempty" bson:"addrs"`
 
-	Attnets  common.AttnetBits `json:"enr_attnets,omitempty"`
-	Eth2Data *common.Eth2Data  `json:"eth2_data" bson:"-"`
+	Attnets common.AttnetBits `json:"enr_attnets,omitempty" bson:"attnets"`
 
-	ProtocolVersion string       `json:"protocol_version,omitempty"`
-	UserAgent       *UserAgent   `json:"user_agent,omitempty"`
-	GeoLocation     *GeoLocation `json:"geolocation" bson:"geolocation"`
+	ForkDigest      common.ForkDigest `json:"fork_digest" bson:"fork_digest"`
+	NextForkVersion common.Version    `json:"next_fork_version" bson:"next_fork_version"`
 
-	IsConnectable bool  `json:"is_connectable"`
-	LastConnected int64 `json:"last_connected"`
-	IsSynced      bool  `json:"is_synced"`
+	ProtocolVersion string       `json:"protocol_version,omitempty" bson:"protocol_version"`
+	UserAgent       *UserAgent   `json:"user_agent,omitempty" bson:"user_agent"`
+	GeoLocation     *GeoLocation `json:"geo_location" bson:"geo_location"`
+
+	Sync  *Sync `json:"sync" bson:"sync"`
+	Score Score `json:"score" bson:"score"`
+
+	IsConnectable bool  `json:"is_connectable" bson:"is_connectable"`
+	LastConnected int64 `json:"last_connected" bson:"last_connected"`
+	LastUpdated   int64 `json:"last_updated" bson:"last_updated"`
 }
 
 // NewPeer initializes new peer
@@ -133,15 +152,17 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		attnetsVal = *attnets
 	}
 	return &Peer{
-		ID:       addr.ID,
-		NodeID:   node.ID().String(),
-		Pubkey:   hex.EncodeToString(pkByte),
-		IP:       node.IP().String(),
-		TCPPort:  node.TCP(),
-		UDPPort:  node.UDP(),
-		Addrs:    addrStr,
-		Eth2Data: eth2Data,
-		Attnets:  attnetsVal,
+		ID:              addr.ID,
+		NodeID:          node.ID().String(),
+		Pubkey:          hex.EncodeToString(pkByte),
+		IP:              node.IP().String(),
+		TCPPort:         node.TCP(),
+		UDPPort:         node.UDP(),
+		Addrs:           addrStr,
+		ForkDigest:      eth2Data.ForkDigest,
+		NextForkVersion: eth2Data.NextForkVersion,
+		Attnets:         attnetsVal,
+		Score:           ScoreGood,
 	}, nil
 }
 
@@ -230,8 +251,17 @@ func (p *Peer) SetConnectionStatus(status bool) {
 
 // SetSyncStatus sets the sync status of a peer
 func (p *Peer) SetSyncStatus(block int64) {
-	if util.CurrentBlock()-block <= blockIgnoreThreshold {
-		p.IsSynced = true
+	cb := util.CurrentBlock()
+	if cb-block <= blockIgnoreThreshold {
+		p.Sync = &Sync{
+			Status:   true,
+			Distance: 0,
+		}
+	} else {
+		p.Sync = &Sync{
+			Status:   false,
+			Distance: int(((cb - block) * 100) / cb),
+		}
 	}
 }
 

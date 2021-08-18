@@ -8,7 +8,6 @@ package graph
 
 import (
 	"context"
-
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
 	svcModels "eth2-crawler/models"
@@ -67,13 +66,23 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	if err != nil {
 		return nil, err
 	}
-
-	result := []*model.AggregateData{}
+	// return only residential and non-residential network type
+	result := []*model.AggregateData{
+		{
+			Name:  string(svcModels.UsageTypeResidential),
+			Count: 0,
+		},
+		{
+			Name:  string(svcModels.UsageTypeNonResidential),
+			Count: 0,
+		},
+	}
 	for i := range aggregateData {
-		result = append(result, &model.AggregateData{
-			Name:  aggregateData[i].Name,
-			Count: aggregateData[i].Count,
-		})
+		if aggregateData[i].Name == string(svcModels.UsageTypeResidential) {
+			result[0].Count += aggregateData[i].Count
+		} else {
+			result[1].Count += aggregateData[i].Count
+		}
 	}
 	return result, nil
 }
@@ -126,28 +135,33 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 	return result, nil
 }
 
-func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
-	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx)
+func (r *queryResolver) GetNodeStats(ctx context.Context, unsyncedPercentage int) (*model.NodeStats, error) {
+	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx, unsyncedPercentage)
 	if err != nil {
 		return nil, err
 	}
-
-	var syncedCount int
-	var unsyncedCount int
-	for i := range aggregateData {
-		if aggregateData[i].Name == svcModels.SyncTypeSynced {
-			syncedCount = aggregateData[i].Count
-		} else {
-			unsyncedCount = aggregateData[i].Count
-		}
-	}
-
-	totalNode := syncedCount + unsyncedCount
 	return &model.NodeStats{
-		TotalNodes:             totalNode,
-		NodeSyncedPercentage:   (float64(syncedCount) / float64(totalNode)) * 100,
-		NodeUnsyncedPercentage: (float64(unsyncedCount) / float64(totalNode)) * 100,
+		TotalNodes:             aggregateData.Total,
+		NodeSyncedPercentage:   (float64(aggregateData.Synced) / float64(aggregateData.Total)) * 100,
+		NodeUnsyncedPercentage: (float64(aggregateData.Unsynced) / float64(aggregateData.Total)) * 100,
 	}, nil
+}
+
+func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error) {
+	data, err := r.historyStore.GetHistory(ctx, int64(start), int64(end))
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.NodeStatsOverTime, 0)
+	for _, v := range data {
+		result = append(result, &model.NodeStatsOverTime{
+			Time:          float64(v.Time),
+			TotalNodes:    v.TotalNodes,
+			SyncedNodes:   v.SyncedNodes,
+			UnsyncedNodes: v.TotalNodes - v.SyncedNodes,
+		})
+	}
+	return result, nil
 }
 
 // Query returns generated.QueryResolver implementation.

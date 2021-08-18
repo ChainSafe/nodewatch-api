@@ -30,10 +30,11 @@ type Server struct {
 
 // Database is a MongoDB config
 type Database struct {
-	URI        string `yaml:"-"`
-	Timeout    int    `yaml:"request_timeout_sec"`
-	Database   string `yaml:"database"`
-	Collection string `yaml:"collection"`
+	URI               string `yaml:"-"`
+	Timeout           int    `yaml:"request_timeout_sec"`
+	Database          string `yaml:"database"`
+	Collection        string `yaml:"collection"`
+	HistoryCollection string `yaml:"history_collection"`
 }
 
 // Resolver provides config for resolver

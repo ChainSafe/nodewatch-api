@@ -28,3 +28,10 @@ type NodeStats struct {
 	NodeSyncedPercentage   float64 `json:"nodeSyncedPercentage"`
 	NodeUnsyncedPercentage float64 `json:"nodeUnsyncedPercentage"`
 }
+
+type NodeStatsOverTime struct {
+	Time          float64 `json:"time"`
+	TotalNodes    int     `json:"totalNodes"`
+	SyncedNodes   int     `json:"syncedNodes"`
+	UnsyncedNodes int     `json:"unsyncedNodes"`
+}
