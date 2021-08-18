@@ -164,6 +164,35 @@ func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64,
 	return result, nil
 }
 
+func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalStats, error) {
+	countryAggrData, err := r.peerStore.AggregateByCountry(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	networkAggrData, err := r.peerStore.AggregateByNetworkType(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var residentialCount, nonresidentialCount, total int
+	for i := range networkAggrData {
+		total += networkAggrData[i].Count
+		if networkAggrData[i].Name == string(svcModels.UsageTypeResidential) {
+			residentialCount += networkAggrData[i].Count
+		} else {
+			nonresidentialCount += networkAggrData[i].Count
+		}
+	}
+
+	result := &model.RegionalStats{
+		TotalParticipatingCountries:  len(countryAggrData),
+		ResidentialNodePercentage:    (float64(residentialCount) / float64(total)) * 100,
+		NonresidentialNodePercentage: (float64(nonresidentialCount) / float64(total)) * 100,
+	}
+	return result, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
