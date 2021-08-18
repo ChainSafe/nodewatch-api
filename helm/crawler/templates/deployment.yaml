@@ -21,7 +21,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        date: "{{ .Release.Time.Seconds }}"
         {{- include "crawler.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
