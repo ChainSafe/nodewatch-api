@@ -37,7 +37,7 @@ type NodeStatsOverTime struct {
 }
 
 type RegionalStats struct {
-	TotalParticipatingCountries  int     `json:"totalParticipatingCountries"`
-	ResidentialNodePercentage    float64 `json:"residentialNodePercentage"`
-	NonresidentialNodePercentage float64 `json:"nonresidentialNodePercentage"`
+	TotalParticipatingCountries int     `json:"totalParticipatingCountries"`
+	HostedNodePercentage        float64 `json:"hostedNodePercentage"`
+	NonhostedNodePercentage     float64 `json:"nonhostedNodePercentage"`
 }
