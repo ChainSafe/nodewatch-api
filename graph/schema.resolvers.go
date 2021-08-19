@@ -111,7 +111,6 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 		if peers[i].GeoLocation != nil &&
 			(peers[i].GeoLocation.Latitude != 0 ||
 				peers[i].GeoLocation.Longitude != 0) {
-
 			var syncStatus string
 			if peers[i].Sync != nil {
 				syncStatus = peers[i].Sync.String()
