@@ -66,23 +66,12 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	if err != nil {
 		return nil, err
 	}
-	// return only residential and non-residential network type
-	result := []*model.AggregateData{
-		{
-			Name:  string(svcModels.UsageTypeResidential),
-			Count: 0,
-		},
-		{
-			Name:  string(svcModels.UsageTypeNonResidential),
-			Count: 0,
-		},
-	}
+	result := []*model.AggregateData{}
 	for i := range aggregateData {
-		if aggregateData[i].Name == string(svcModels.UsageTypeResidential) {
-			result[0].Count += aggregateData[i].Count
-		} else {
-			result[1].Count += aggregateData[i].Count
-		}
+		result = append(result, &model.AggregateData{
+			Name:  aggregateData[i].Name,
+			Count: aggregateData[i].Count,
+		})
 	}
 	return result, nil
 }
@@ -175,20 +164,20 @@ func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalSt
 		return nil, err
 	}
 
-	var residentialCount, nonresidentialCount, total int
+	var hostedCount, nonhostedCount, total int
 	for i := range networkAggrData {
 		total += networkAggrData[i].Count
-		if networkAggrData[i].Name == string(svcModels.UsageTypeResidential) {
-			residentialCount += networkAggrData[i].Count
+		if networkAggrData[i].Name == string(svcModels.UsageTypeHosting) {
+			hostedCount += networkAggrData[i].Count
 		} else {
-			nonresidentialCount += networkAggrData[i].Count
+			nonhostedCount += networkAggrData[i].Count
 		}
 	}
 
 	result := &model.RegionalStats{
-		TotalParticipatingCountries:  len(countryAggrData),
-		ResidentialNodePercentage:    (float64(residentialCount) / float64(total)) * 100,
-		NonresidentialNodePercentage: (float64(nonresidentialCount) / float64(total)) * 100,
+		TotalParticipatingCountries: len(countryAggrData),
+		HostedNodePercentage:        (float64(hostedCount) / float64(total)) * 100,
+		NonhostedNodePercentage:     (float64(nonhostedCount) / float64(total)) * 100,
 	}
 	return result, nil
 }
