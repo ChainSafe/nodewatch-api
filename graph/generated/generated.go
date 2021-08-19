@@ -89,9 +89,9 @@ type ComplexityRoot struct {
 	}
 
 	RegionalStats struct {
-		NonresidentialNodePercentage func(childComplexity int) int
-		ResidentialNodePercentage    func(childComplexity int) int
-		TotalParticipatingCountries  func(childComplexity int) int
+		HostedNodePercentage        func(childComplexity int) int
+		NonhostedNodePercentage     func(childComplexity int) int
+		TotalParticipatingCountries func(childComplexity int) int
 	}
 }
 
@@ -328,19 +328,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetRegionalStats(childComplexity), true
 
-	case "RegionalStats.nonresidentialNodePercentage":
-		if e.complexity.RegionalStats.NonresidentialNodePercentage == nil {
+	case "RegionalStats.hostedNodePercentage":
+		if e.complexity.RegionalStats.HostedNodePercentage == nil {
 			break
 		}
 
-		return e.complexity.RegionalStats.NonresidentialNodePercentage(childComplexity), true
+		return e.complexity.RegionalStats.HostedNodePercentage(childComplexity), true
 
-	case "RegionalStats.residentialNodePercentage":
-		if e.complexity.RegionalStats.ResidentialNodePercentage == nil {
+	case "RegionalStats.nonhostedNodePercentage":
+		if e.complexity.RegionalStats.NonhostedNodePercentage == nil {
 			break
 		}
 
-		return e.complexity.RegionalStats.ResidentialNodePercentage(childComplexity), true
+		return e.complexity.RegionalStats.NonhostedNodePercentage(childComplexity), true
 
 	case "RegionalStats.totalParticipatingCountries":
 		if e.complexity.RegionalStats.TotalParticipatingCountries == nil {
@@ -425,8 +425,8 @@ type NodeStatsOverTime {
 
 type RegionalStats {
   totalParticipatingCountries: Int!
-  residentialNodePercentage: Float!
-  nonresidentialNodePercentage: Float!
+  hostedNodePercentage: Float!
+  nonhostedNodePercentage: Float!
 }
 
 type HeatmapData {
@@ -1649,7 +1649,7 @@ func (ec *executionContext) _RegionalStats_totalParticipatingCountries(ctx conte
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RegionalStats_residentialNodePercentage(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
+func (ec *executionContext) _RegionalStats_hostedNodePercentage(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1667,7 +1667,7 @@ func (ec *executionContext) _RegionalStats_residentialNodePercentage(ctx context
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ResidentialNodePercentage, nil
+		return obj.HostedNodePercentage, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1684,7 +1684,7 @@ func (ec *executionContext) _RegionalStats_residentialNodePercentage(ctx context
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RegionalStats_nonresidentialNodePercentage(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
+func (ec *executionContext) _RegionalStats_nonhostedNodePercentage(ctx context.Context, field graphql.CollectedField, obj *model.RegionalStats) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1702,7 +1702,7 @@ func (ec *executionContext) _RegionalStats_nonresidentialNodePercentage(ctx cont
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.NonresidentialNodePercentage, nil
+		return obj.NonhostedNodePercentage, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3191,13 +3191,13 @@ func (ec *executionContext) _RegionalStats(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "residentialNodePercentage":
-			out.Values[i] = ec._RegionalStats_residentialNodePercentage(ctx, field, obj)
+		case "hostedNodePercentage":
+			out.Values[i] = ec._RegionalStats_hostedNodePercentage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "nonresidentialNodePercentage":
-			out.Values[i] = ec._RegionalStats_nonresidentialNodePercentage(ctx, field, obj)
+		case "nonhostedNodePercentage":
+			out.Values[i] = ec._RegionalStats_nonhostedNodePercentage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

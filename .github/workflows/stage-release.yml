@@ -38,4 +38,4 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.STAGE_KUBE_CONFIG_DATA }}
         with:
-          command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml crawler helm/crawler
+          command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml --recreate-pods crawler helm/crawler

@@ -24,8 +24,8 @@ type NodeStatsOverTime {
 
 type RegionalStats {
   totalParticipatingCountries: Int!
-  residentialNodePercentage: Float!
-  nonresidentialNodePercentage: Float!
+  hostedNodePercentage: Float!
+  nonhostedNodePercentage: Float!
 }
 
 type HeatmapData {
