@@ -47,6 +47,8 @@ const (
 	OSUnknown OS = "unknown"
 
 	VersionUnknown = "unknown"
+	StatusSynced   = "synced"
+	StatusUnsynced = "unsynced"
 )
 
 // UserAgent holds peer's client related info
@@ -100,6 +102,14 @@ type GeoLocation struct {
 type Sync struct {
 	Status   bool `json:"status" bson:"status"`
 	Distance int  `json:"distance" bson:"distance"` // sync distance in percentage
+}
+
+// String returns the sync status
+func (s *Sync) String() string {
+	if s.Status {
+		return StatusSynced
+	}
+	return StatusUnsynced
 }
 
 // Peer holds all information of a eth2 peer
