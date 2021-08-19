@@ -160,16 +160,16 @@ func (c *crawler) bgWorker(ctx context.Context) {
 }
 
 func (c *crawler) updatePeerInfo(ctx context.Context, peer *models.Peer) {
-	// update geolocation
-	if peer.GeoLocation == nil {
-		c.updateGeolocation(ctx, peer)
-	}
 	// update connection status, agent version, sync status
 	isConnectable := c.collectNodeInfoRetryer(ctx, peer)
 	if isConnectable {
 		peer.SetConnectionStatus(true)
 		peer.Score = models.ScoreGood
 		peer.LastConnected = time.Now().Unix()
+		// update geolocation
+		if peer.GeoLocation == nil {
+			c.updateGeolocation(ctx, peer)
+		}
 	} else {
 		peer.Score--
 	}
