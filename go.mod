@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/ethereum/go-ethereum v1.10.7
 	github.com/golang/snappy v0.0.4
-	github.com/google/uuid v1.1.5
+	github.com/google/uuid v1.3.0
 	github.com/ipdata/go v0.7.2
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6
