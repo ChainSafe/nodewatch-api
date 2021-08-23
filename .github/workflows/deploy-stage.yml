@@ -1,7 +1,7 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
 
-name: Release Staging
+name: Staging Deployment
 on:
   push:
     branches:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Release Staging
+    name: Staging Deployment
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
