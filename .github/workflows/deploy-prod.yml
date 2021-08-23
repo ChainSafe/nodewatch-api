@@ -1,15 +1,14 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
 
-name: Release Staging
+name: Production Deployment
 on:
-  push:
-    branches:
-      - 'main'
+  release:
+    types: [published]
 
 jobs:
   build:
-    name: Release Staging
+    name: Production Deployment
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
@@ -19,23 +18,23 @@ jobs:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
-          region: ${{ secrets.STAGE_AWS_REGION }}
-          repo: ${{ secrets.ECR_REPOSITORY }}
-          tags: stage
+          region: ${{ secrets.PROD_AWS_REGION }}
+          repo: ${{ secrets.PROD_ECR_REPOSITORY }}
+          tags: ${{ github.event.release.tag_name }}
           create_repo: false
-      - run: 'echo "$STAGE_HELM_VALUES" > helm/values.yaml'
+      - run: 'echo "$PROD_HELM_VALUES" > helm/values.yaml'
         shell: bash
         env:
-          STAGE_HELM_VALUES: ${{secrets.STAGE_HELM_VALUES}}
+          PROD_HELM_VALUES: ${{secrets.PROD_HELM_VALUES}}
       - name: AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.STAGE_AWS_REGION }}
+          aws-region: ${{ secrets.PROD_AWS_REGION }}
       - name: helm deploy
         uses: koslib/helm-eks-action@master
         env:
-          KUBE_CONFIG_DATA: ${{ secrets.STAGE_KUBE_CONFIG_DATA }}
+          KUBE_CONFIG_DATA: ${{ secrets.PROD_KUBE_CONFIG_DATA }}
         with:
-          command: helm upgrade --install --create-namespace --namespace ${{ secrets.STAGE_KUBE_NAMESPACE }} -f helm/values.yaml --recreate-pods crawler helm/crawler
+          command: helm upgrade --install --create-namespace --namespace ${{ secrets.PROD_KUBE_NAMESPACE }} --set image.tag=${{ github.event.release.tag_name }} -f helm/values.yaml crawler helm/crawler
