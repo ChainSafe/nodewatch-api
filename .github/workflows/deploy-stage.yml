@@ -20,7 +20,7 @@ jobs:
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           region: ${{ secrets.STAGE_AWS_REGION }}
-          repo: ${{ secrets.ECR_REPOSITORY }}
+          repo: ${{ secrets.STAGE_ECR_REPOSITORY }}
           tags: stage
           create_repo: false
       - run: 'echo "$STAGE_HELM_VALUES" > helm/values.yaml'

@@ -19,7 +19,7 @@ jobs:
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           region: ${{ secrets.PROD_AWS_REGION }}
-          repo: ${{ secrets.ECR_REPOSITORY }}
+          repo: ${{ secrets.PROD_ECR_REPOSITORY }}
           tags: ${{ github.event.release.tag_name }}
           create_repo: false
       - run: 'echo "$PROD_HELM_VALUES" > helm/values.yaml'
