@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: LGPL-3.0-only
 
 name: Production Deployment
-# on:
-#   release:
-#     types: [published]
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -23,8 +20,7 @@ jobs:
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           region: ${{ secrets.PROD_AWS_REGION }}
           repo: ${{ secrets.PROD_ECR_REPOSITORY }}
-          # tags: ${{ github.event.release.tag_name }}
-          tags: "test"
+          tags: ${{ github.event.release.tag_name }}
           create_repo: false
       - run: 'echo "$PROD_HELM_VALUES" > helm/values.yaml'
         shell: bash
@@ -41,5 +37,4 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.PROD_KUBE_CONFIG_DATA }}
         with:
-          # command: helm upgrade --install --create-namespace --namespace ${{ secrets.PROD_KUBE_NAMESPACE }} --set image.tag=${{ github.event.release.tag_name }} -f helm/values.yaml crawler helm/crawler
-          command: helm upgrade --install --create-namespace --namespace ${{ secrets.PROD_KUBE_NAMESPACE }} --set image.tag=test -f helm/values.yaml crawler helm/crawler
+          command: helm upgrade --install --create-namespace --namespace ${{ secrets.PROD_KUBE_NAMESPACE }} --set image.tag=${{ github.event.release.tag_name }} -f helm/values.yaml crawler helm/crawler
