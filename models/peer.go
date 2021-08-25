@@ -130,6 +130,7 @@ type Peer struct {
 
 	ProtocolVersion string       `json:"protocol_version,omitempty" bson:"protocol_version"`
 	UserAgent       *UserAgent   `json:"user_agent,omitempty" bson:"user_agent"`
+	UserAgentRaw    string       `json:"user_agent_raw" bson:"user_agent_raw"`
 	GeoLocation     *GeoLocation `json:"geo_location" bson:"geo_location"`
 
 	Sync  *Sync `json:"sync" bson:"sync"`
@@ -249,6 +250,7 @@ func (p *Peer) SetUserAgent(ag string) {
 		userAgent.OS = OSUnknown
 	}
 	p.UserAgent = userAgent
+	p.UserAgentRaw = ag
 }
 
 // SetConnectionStatus sets connection status and date
