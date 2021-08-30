@@ -12,5 +12,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: GoogleCloudPlatform/release-please-action@v2
+        id: release
         with:
           release-type: go
+      - name: Checkout code
+        uses: actions/checkout@v2
+        if: ${{ steps.release.outputs.release_created }}
+      - uses: kciter/aws-ecr-action@v4
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          region: ${{ secrets.PROD_AWS_REGION }}
+          repo: ${{ secrets.PROD_ECR_REPOSITORY }}
+          tags: ${{ steps.release.outputs.tag_name }}
+          create_repo: false
+        if: ${{ steps.release.outputs.release_created }}
+      - run: 'echo "$PROD_HELM_VALUES" > helm/values.yaml'
+        shell: bash
+        env:
+          PROD_HELM_VALUES: ${{secrets.PROD_HELM_VALUES}}
+        if: ${{ steps.release.outputs.release_created }}
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.PROD_AWS_REGION }}
+        if: ${{ steps.release.outputs.release_created }}
+      - name: helm deploy
+        uses: koslib/helm-eks-action@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.PROD_KUBE_CONFIG_DATA }}
+        with:
+          command: helm upgrade --install --create-namespace --namespace ${{ secrets.PROD_KUBE_NAMESPACE }} --set image.tag=${{ steps.release.outputs.tag_name }} -f helm/values.yaml crawler helm/crawler
+        if: ${{ steps.release.outputs.release_created }}
