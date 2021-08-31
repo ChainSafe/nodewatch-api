@@ -75,7 +75,7 @@ const (
 type Score int
 
 const (
-	ScoreGood Score = 2
+	ScoreGood Score = 3
 	ScoreBad  Score = 0
 )
 
