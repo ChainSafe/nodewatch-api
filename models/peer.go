@@ -20,7 +20,7 @@ import (
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
-const blockIgnoreThreshold = 2
+const blockIgnoreThreshold = (24 * 60 * 60) / 12
 
 // ClientName defines the type for eth2 client name
 type ClientName string
@@ -75,7 +75,7 @@ const (
 type Score int
 
 const (
-	ScoreGood Score = 10
+	ScoreGood Score = 2
 	ScoreBad  Score = 0
 )
 
