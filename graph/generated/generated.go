@@ -83,7 +83,7 @@ type ComplexityRoot struct {
 		AggregateByNetwork         func(childComplexity int) int
 		AggregateByOperatingSystem func(childComplexity int) int
 		GetHeatmapData             func(childComplexity int) int
-		GetNodeStats               func(childComplexity int, unsyncedPercentage int) int
+		GetNodeStats               func(childComplexity int) int
 		GetNodeStatsOverTime       func(childComplexity int, start float64, end float64) int
 		GetRegionalStats           func(childComplexity int) int
 	}
@@ -102,7 +102,7 @@ type QueryResolver interface {
 	AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error)
 	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
-	GetNodeStats(ctx context.Context, unsyncedPercentage int) (*model.NodeStats, error)
+	GetNodeStats(ctx context.Context) (*model.NodeStats, error)
 	GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error)
 	GetRegionalStats(ctx context.Context) (*model.RegionalStats, error)
 }
@@ -302,12 +302,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_getNodeStats_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetNodeStats(childComplexity, args["unsyncedPercentage"].(int)), true
+		return e.complexity.Query.GetNodeStats(childComplexity), true
 
 	case "Query.getNodeStatsOverTime":
 		if e.complexity.Query.GetNodeStatsOverTime == nil {
@@ -446,7 +441,7 @@ type Query {
   aggregateByNetwork: [AggregateData!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
-  getNodeStats(unsyncedPercentage: Int!): NodeStats!
+  getNodeStats: NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
   getRegionalStats: RegionalStats!
 }`, BuiltIn: false},
@@ -493,21 +488,6 @@ func (ec *executionContext) field_Query_getNodeStatsOverTime_args(ctx context.Co
 		}
 	}
 	args["end"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getNodeStats_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["unsyncedPercentage"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unsyncedPercentage"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["unsyncedPercentage"] = arg0
 	return args, nil
 }
 
@@ -1440,16 +1420,9 @@ func (ec *executionContext) _Query_getNodeStats(ctx context.Context, field graph
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getNodeStats_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetNodeStats(rctx, args["unsyncedPercentage"].(int))
+		return ec.resolvers.Query().GetNodeStats(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
