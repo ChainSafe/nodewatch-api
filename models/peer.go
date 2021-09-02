@@ -20,7 +20,8 @@ import (
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
-const blockIgnoreThreshold = (24 * 60 * 60) / 12
+// 256 epochs
+const blockIgnoreThreshold = 8192
 
 // ClientName defines the type for eth2 client name
 type ClientName string
