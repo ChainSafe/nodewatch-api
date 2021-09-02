@@ -129,8 +129,8 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 	return result, nil
 }
 
-func (r *queryResolver) GetNodeStats(ctx context.Context, unsyncedPercentage int) (*model.NodeStats, error) {
-	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx, unsyncedPercentage)
+func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
+	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx)
 	if err != nil {
 		return nil, err
 	}

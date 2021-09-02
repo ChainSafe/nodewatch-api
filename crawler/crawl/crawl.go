@@ -248,7 +248,7 @@ func (c *crawler) updateGeolocation(ctx context.Context, peer *models.Peer) {
 func (c *crawler) insertToHistory() {
 	ctx := context.Background()
 	// get count
-	aggregateData, err := c.peerStore.AggregateBySyncStatus(ctx, 15)
+	aggregateData, err := c.peerStore.AggregateBySyncStatus(ctx)
 	if err != nil {
 		log.Error("error getting sync status", log.Ctx{"err": err})
 	}

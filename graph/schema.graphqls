@@ -45,7 +45,7 @@ type Query {
   aggregateByNetwork: [AggregateData!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
-  getNodeStats(unsyncedPercentage: Int!): NodeStats!
+  getNodeStats: NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
   getRegionalStats: RegionalStats!
 }
