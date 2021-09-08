@@ -37,6 +37,21 @@ const (
 	OthersClient     ClientName = "others"
 )
 
+// clients contains mapping for client name - possible identity names mapping
+var clients map[ClientName][]string
+
+func init() {
+	clients = map[ClientName][]string{
+		PrysmClient:      []string{"prysm"},
+		LighthouseClient: []string{"lighthouse"},
+		TekuClient:       []string{"teku"},
+		CortexClient:     []string{"cortex"},
+		LodestarClient:   []string{"lodestar", "js-libp2p"},
+		NimbusClient:     []string{"nimbus"},
+		TrinityClient:    []string{"trinity"},
+	}
+}
+
 // OS defines the type of os of agent
 
 type OS string
@@ -191,23 +206,16 @@ func (p *Peer) SetUserAgent(ag string) {
 	userAgent := new(UserAgent)
 	parts := strings.Split(ag, "/")
 
-	allClients := []ClientName{
-		PrysmClient,
-		LighthouseClient,
-		TekuClient,
-		CortexClient,
-		LodestarClient,
-		NimbusClient,
-		TrinityClient,
-		OthersClient,
-	}
-
-	for _, name := range allClients {
-		if strings.EqualFold(string(name), parts[0]) {
-			userAgent.Name = name
-			break
+nameChecker:
+	for name, identityNames := range clients {
+		for i := range identityNames {
+			if strings.EqualFold(identityNames[i], parts[0]) {
+				userAgent.Name = name
+				break nameChecker
+			}
 		}
 	}
+
 	if userAgent.Name == "" {
 		userAgent.Name = OthersClient
 	}
