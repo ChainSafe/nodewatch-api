@@ -11,7 +11,7 @@ require (
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6
 	github.com/libp2p/go-libp2p-noise v0.2.2
-	github.com/libp2p/go-tcp-transport v0.2.7
+	github.com/libp2p/go-tcp-transport v0.2.8
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/protolambda/zrnt v0.19.0
