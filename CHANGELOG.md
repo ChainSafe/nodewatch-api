@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.1.1...v1.2.0) (2021-09-08)
+
+
+### Features
+
+* loadstart parser added ([#99](https://www.github.com/ChainSafe/eth2-crawler/issues/99)) ([d5da38a](https://www.github.com/ChainSafe/eth2-crawler/commit/d5da38aaecdc36b7d852a8ce60be68156c6a8dc0))
+
 ### [1.1.1](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.1.0...v1.1.1) (2021-09-06)
 
 
