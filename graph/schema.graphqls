@@ -48,4 +48,5 @@ type Query {
   getNodeStats: NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
   getRegionalStats: RegionalStats!
+  getAltairUpgradePercentage: Float!
 }
