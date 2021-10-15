@@ -246,6 +246,8 @@ func supportAltairUpgrade(clientName, ver string) bool {
 		if v.GreaterThanOrEqual(clientVersion) {
 			return true
 		}
+	default:
+		return false
 	}
 	return false
 }
