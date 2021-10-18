@@ -11,6 +11,8 @@ import (
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
 	svcModels "eth2-crawler/models"
+
+	"github.com/hashicorp/go-version"
 )
 
 func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.AggregateData, error) {
@@ -187,7 +189,68 @@ func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalSt
 	return result, nil
 }
 
+func (r *queryResolver) GetAltairUpgradePercentage(ctx context.Context) (float64, error) {
+	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// check altair upgrade
+	count := 0
+	total := 0
+	for _, client := range aggregateData {
+		for _, v := range client.Versions {
+			total += v.Count
+			if supportAltairUpgrade(client.Client, v.Name) {
+				count += v.Count
+			}
+		}
+	}
+	percentage := float64(count) / float64(total) * 100
+	return percentage, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
+
+func supportAltairUpgrade(clientName, ver string) bool {
+	if len(ver) != 0 && ver[0:1] != "v" {
+		ver = "v" + ver
+	}
+	clientVersion, err := version.NewVersion(ver)
+	if err != nil {
+		return false
+	}
+
+	switch svcModels.ClientName(clientName) {
+	case svcModels.PrysmClient:
+		v, _ := version.NewVersion("v2.0.0")
+		if v.GreaterThanOrEqual(clientVersion) {
+			return true
+		}
+	case svcModels.TekuClient:
+		v, _ := version.NewVersion("v21.9.2")
+		if v.GreaterThanOrEqual(clientVersion) {
+			return true
+		}
+	case svcModels.LighthouseClient:
+		v, _ := version.NewVersion("v2.0.0")
+		if v.GreaterThanOrEqual(clientVersion) {
+			return true
+		}
+	case svcModels.NimbusClient:
+		v, _ := version.NewVersion("v1.5.0")
+		if v.GreaterThanOrEqual(clientVersion) {
+			return true
+		}
+	case svcModels.LodestarClient:
+		v, _ := version.NewVersion("v0.31.0")
+		if v.GreaterThanOrEqual(clientVersion) {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
+}
