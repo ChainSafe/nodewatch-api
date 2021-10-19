@@ -7,7 +7,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.10
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
-	github.com/hashicorp/go-version v1.2.0
+	github.com/hashicorp/go-version v1.3.0
 	github.com/ipdata/go v0.7.2
 	github.com/libp2p/go-libp2p v0.15.1
 	github.com/libp2p/go-libp2p-core v0.9.0
