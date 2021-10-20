@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.2.0...v1.3.0) (2021-10-18)
+
+
+### Features
+
+* Added api for checking altair upgrade percentage ([#110](https://www.github.com/ChainSafe/eth2-crawler/issues/110)) ([dc99a2b](https://www.github.com/ChainSafe/eth2-crawler/commit/dc99a2b61eac1a6359a54c3bdef4b336f20896b0))
+
 ## [1.2.0](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.1.1...v1.2.0) (2021-09-08)
 
 
