@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.3.1](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.3.0...v1.3.1) (2021-10-23)
+
+
+### Bug Fixes
+
+* bump github.com/ethereum/go-ethereum from 1.10.10 to 1.10.11 ([#118](https://www.github.com/ChainSafe/eth2-crawler/issues/118)) ([d556e00](https://www.github.com/ChainSafe/eth2-crawler/commit/d556e00426457b6e6946e08c9bd3c24b7d3add61))
+
 ## [1.3.0](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.2.0...v1.3.0) (2021-10-18)
 
 
