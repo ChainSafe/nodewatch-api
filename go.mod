@@ -20,6 +20,6 @@ require (
 	github.com/rs/cors v1.8.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vektah/gqlparser/v2 v2.2.0
-	go.mongodb.org/mongo-driver v1.7.3
+	go.mongodb.org/mongo-driver v1.7.4
 	gopkg.in/yaml.v2 v2.4.0
 )
