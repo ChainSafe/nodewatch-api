@@ -10,9 +10,9 @@ require (
 	github.com/hashicorp/go-version v1.4.0
 	github.com/ipdata/go v0.7.2
 	github.com/libp2p/go-libp2p v0.15.1
-	github.com/libp2p/go-libp2p-core v0.9.0
+	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/libp2p/go-libp2p-noise v0.2.2
-	github.com/libp2p/go-tcp-transport v0.2.8
+	github.com/libp2p/go-tcp-transport v0.5.1
 	github.com/multiformats/go-multiaddr v0.5.0
 	github.com/protolambda/zrnt v0.25.0
 	github.com/protolambda/ztyp v0.2.1
