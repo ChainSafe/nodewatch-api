@@ -1,4 +1,4 @@
-// Copyright 2021 ChainSafe Systems
+// Copyright 2022 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
 package graph
@@ -11,10 +11,9 @@ import (
 	"eth2-crawler/graph/generated"
 	"eth2-crawler/graph/model"
 	svcModels "eth2-crawler/models"
-
-	"github.com/hashicorp/go-version"
 )
 
+// AggregateByAgentName is the resolver for the aggregateByAgentName field.
 func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.AggregateData, error) {
 	aggregateData, err := r.peerStore.AggregateByAgentName(ctx)
 	if err != nil {
@@ -31,6 +30,7 @@ func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.Aggr
 	return result, nil
 }
 
+// AggregateByCountry is the resolver for the aggregateByCountry field.
 func (r *queryResolver) AggregateByCountry(ctx context.Context) ([]*model.AggregateData, error) {
 	aggregateData, err := r.peerStore.AggregateByCountry(ctx)
 	if err != nil {
@@ -47,6 +47,7 @@ func (r *queryResolver) AggregateByCountry(ctx context.Context) ([]*model.Aggreg
 	return result, nil
 }
 
+// AggregateByOperatingSystem is the resolver for the aggregateByOperatingSystem field.
 func (r *queryResolver) AggregateByOperatingSystem(ctx context.Context) ([]*model.AggregateData, error) {
 	aggregateData, err := r.peerStore.AggregateByOperatingSystem(ctx)
 	if err != nil {
@@ -63,6 +64,7 @@ func (r *queryResolver) AggregateByOperatingSystem(ctx context.Context) ([]*mode
 	return result, nil
 }
 
+// AggregateByNetwork is the resolver for the aggregateByNetwork field.
 func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error) {
 	aggregateData, err := r.peerStore.AggregateByNetworkType(ctx)
 	if err != nil {
@@ -78,6 +80,26 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 	return result, nil
 }
 
+// AggregateByHardforkSchedule is the resolver for the aggregateByHardforkSchedule field.
+func (r *queryResolver) AggregateByHardforkSchedule(ctx context.Context) ([]*model.NextHardforkAggregation, error) {
+	allPeers, err := r.peerStore.ViewAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := []*model.NextHardforkAggregation{}
+
+	for _, group := range model.GroupByHardforkSchedule(allPeers) {
+		result = append(result, &model.NextHardforkAggregation{
+			Version: group.Version,
+			Epoch:   group.Epoch,
+			Count:   group.Count,
+		})
+	}
+	return model.SortByCount(result), nil
+}
+
+// AggregateByClientVersion is the resolver for the aggregateByClientVersion field.
 func (r *queryResolver) AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error) {
 	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
 	if err != nil {
@@ -102,6 +124,7 @@ func (r *queryResolver) AggregateByClientVersion(ctx context.Context) ([]*model.
 	return result, nil
 }
 
+// GetHeatmapData is the resolver for the getHeatmapData field.
 func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error) {
 	peers, err := r.peerStore.ViewAll(ctx)
 	if err != nil {
@@ -131,6 +154,7 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapDat
 	return result, nil
 }
 
+// GetNodeStats is the resolver for the getNodeStats field.
 func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
 	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx)
 	if err != nil {
@@ -143,6 +167,7 @@ func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, err
 	}, nil
 }
 
+// GetNodeStatsOverTime is the resolver for the getNodeStatsOverTime field.
 func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error) {
 	data, err := r.historyStore.GetHistory(ctx, int64(start), int64(end))
 	if err != nil {
@@ -160,6 +185,7 @@ func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64,
 	return result, nil
 }
 
+// GetRegionalStats is the resolver for the getRegionalStats field.
 func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalStats, error) {
 	countryAggrData, err := r.peerStore.AggregateByCountry(ctx)
 	if err != nil {
@@ -189,6 +215,7 @@ func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalSt
 	return result, nil
 }
 
+// GetAltairUpgradePercentage is the resolver for the getAltairUpgradePercentage field.
 func (r *queryResolver) GetAltairUpgradePercentage(ctx context.Context) (float64, error) {
 	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
 	if err != nil {
@@ -200,7 +227,7 @@ func (r *queryResolver) GetAltairUpgradePercentage(ctx context.Context) (float64
 	for _, client := range aggregateData {
 		for _, v := range client.Versions {
 			total += v.Count
-			if supportAltairUpgrade(client.Client, v.Name) {
+			if model.SupportAltairUpgrade(client.Client, v.Name) {
 				count += v.Count
 			}
 		}
@@ -213,44 +240,3 @@ func (r *queryResolver) GetAltairUpgradePercentage(ctx context.Context) (float64
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
-
-func supportAltairUpgrade(clientName, ver string) bool {
-	if len(ver) != 0 && ver[0:1] != "v" {
-		ver = "v" + ver
-	}
-	clientVersion, err := version.NewVersion(ver)
-	if err != nil {
-		return false
-	}
-
-	switch svcModels.ClientName(clientName) {
-	case svcModels.PrysmClient:
-		v, _ := version.NewVersion("v2.0.0")
-		if clientVersion.GreaterThanOrEqual(v) {
-			return true
-		}
-	case svcModels.TekuClient:
-		v, _ := version.NewVersion("v21.9.2")
-		if clientVersion.GreaterThanOrEqual(v) {
-			return true
-		}
-	case svcModels.LighthouseClient:
-		v, _ := version.NewVersion("v2.0.0")
-		if clientVersion.GreaterThanOrEqual(v) {
-			return true
-		}
-	case svcModels.NimbusClient:
-		v, _ := version.NewVersion("v1.5.0")
-		if clientVersion.GreaterThanOrEqual(v) {
-			return true
-		}
-	case svcModels.LodestarClient:
-		v, _ := version.NewVersion("v0.31.0")
-		if clientVersion.GreaterThanOrEqual(v) {
-			return true
-		}
-	default:
-		return false
-	}
-	return false
-}

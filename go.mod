@@ -3,7 +3,7 @@ module eth2-crawler
 go 1.17
 
 require (
-	github.com/99designs/gqlgen v0.16.0
+	github.com/99designs/gqlgen v0.17.13
 	github.com/ethereum/go-ethereum v1.10.12
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
@@ -18,8 +18,8 @@ require (
 	github.com/protolambda/ztyp v0.2.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.8.2
-	github.com/stretchr/testify v1.7.0
-	github.com/vektah/gqlparser/v2 v2.2.0
+	github.com/stretchr/testify v1.7.1
+	github.com/vektah/gqlparser/v2 v2.4.6
 	go.mongodb.org/mongo-driver v1.8.3
 	gopkg.in/yaml.v2 v2.4.0
 )

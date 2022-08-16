@@ -23,6 +23,12 @@ type HeatmapData struct {
 	Country     string  `json:"country"`
 }
 
+type NextHardforkAggregation struct {
+	Version string `json:"version"`
+	Epoch   string `json:"epoch"`
+	Count   int    `json:"count"`
+}
+
 type NodeStats struct {
 	TotalNodes             int     `json:"totalNodes"`
 	NodeSyncedPercentage   float64 `json:"nodeSyncedPercentage"`
