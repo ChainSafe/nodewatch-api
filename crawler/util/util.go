@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/p2p/enode"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 	"github.com/protolambda/ztyp/codec"
@@ -50,7 +50,11 @@ func EnodeToMultiAddr(node *enode.Node) ([]multiaddr.Multiaddr, error) {
 		ipScheme = "ip6"
 	}
 	pubkey := node.Pubkey()
-	peerID, err := peer.IDFromPublicKey(crypto.PubKey((*crypto.Secp256k1PublicKey)(pubkey)))
+	ecdsaPk, err := crypto.ECDSAPublicKeyFromPubKey(*pubkey)
+	if err != nil {
+		return nil, err
+	}
+	peerID, err := peer.IDFromPublicKey(ecdsaPk)
 	if err != nil {
 		return nil, err
 	}

@@ -17,7 +17,7 @@ import (
 
 // Start starts the service
 func Start(ctx context.Context, cfg *config.Server, handler http.Handler) {
-	cors := cors.New(cors.Options{
+	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   cfg.CORS,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"},
 		ExposedHeaders:   []string{"Content-Length", "Content-Type", "Content-Disposition"},
@@ -29,7 +29,7 @@ func Start(ctx context.Context, cfg *config.Server, handler http.Handler) {
 		ReadTimeout:       time.Duration(cfg.ReadTimeout) * time.Second,
 		ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeout) * time.Second,
 		WriteTimeout:      time.Duration(cfg.WriteTimeout) * time.Second,
-		Handler:           cors.Handler(handler),
+		Handler:           corsHandler.Handler(handler),
 	}
 
 	go func() {
