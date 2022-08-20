@@ -5,6 +5,7 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
+// TODO: Can be removed in next release.
 func supportAltairUpgrade(clientName, ver string) bool {
 	if len(ver) != 0 && ver[0:1] != "v" {
 		ver = "v" + ver
