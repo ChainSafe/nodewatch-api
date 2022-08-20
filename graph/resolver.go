@@ -1,7 +1,7 @@
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// Package graph contans graph related code
+// Package graph contains graph related code
 package graph
 
 import (
