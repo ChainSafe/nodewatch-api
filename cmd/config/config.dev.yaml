@@ -5,6 +5,7 @@ server:
   port: 8080
   debug: true
   read_timeout_seconds: 360
+  read_header_timeout_seconds: 360
   write_timeout_seconds: 360
   cors: ["*"]
 
