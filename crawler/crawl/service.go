@@ -6,7 +6,6 @@ package crawl
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"eth2-crawler/store/peerstore"
 	"eth2-crawler/store/record"
 	"fmt"
@@ -17,9 +16,7 @@ import (
 	"eth2-crawler/crawler/p2p"
 	ipResolver "eth2-crawler/resolver"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
-	ic "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	ma "github.com/multiformats/go-multiaddr"
@@ -31,19 +28,17 @@ type listenConfig struct {
 	listenAddress net.IP
 	listenPORT    int
 	dbPath        string
-	privateKey    *ecdsa.PrivateKey
 }
 
 // Initialize initializes the core crawler component
 func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipResolver ipResolver.Provider, bootNodeAddrs []string) error {
 	ctx := context.Background()
-	pkey, _ := crypto.GenerateKey()
+
 	listenCfg := &listenConfig{
 		bootNodeAddrs: bootNodeAddrs,
 		listenAddress: net.IPv4zero,
 		listenPORT:    30304,
 		dbPath:        "",
-		privateKey:    pkey,
 	}
 	disc, err := startV5(listenCfg)
 	if err != nil {
@@ -54,12 +49,8 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 	if err != nil {
 		return err
 	}
-	privKey, _, err := ic.ECDSAKeyPairFromKey(listenCfg.privateKey)
-	if err != nil {
-		return err
-	}
+
 	host, err := p2p.NewHost(
-		libp2p.Identity(privKey),
 		libp2p.ListenAddrs(listenAddrs),
 		libp2p.UserAgent("Eth2-Crawler"),
 		libp2p.Transport(tcp.NewTCPTransport),
@@ -70,7 +61,7 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 		return err
 	}
 
-	c := newCrawler(disc, peerStore, historyStore, ipResolver, listenCfg.privateKey, disc.RandomNodes(), host, 200)
+	c := newCrawler(disc, peerStore, historyStore, ipResolver, disc.RandomNodes(), host, 200)
 	go c.start(ctx)
 	// scheduler for updating peer
 	go c.updatePeer(ctx)

@@ -5,7 +5,6 @@ package crawl
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"eth2-crawler/crawler/p2p"
 	reqresp "eth2-crawler/crawler/rpc/request"
 	"eth2-crawler/crawler/util"
@@ -28,7 +27,6 @@ type crawler struct {
 	ipResolver      ipResolver.Provider
 	iter            enode.Iterator
 	nodeCh          chan *enode.Node
-	privateKey      *ecdsa.PrivateKey
 	host            p2p.Host
 	jobs            chan *models.Peer
 	jobsConcurrency int
@@ -41,14 +39,13 @@ type resolver interface {
 
 // newCrawler inits new crawler service
 func newCrawler(disc resolver, peerStore peerstore.Provider, historyStore record.Provider,
-	ipResolver ipResolver.Provider, privateKey *ecdsa.PrivateKey, iter enode.Iterator,
+	ipResolver ipResolver.Provider, iter enode.Iterator,
 	host p2p.Host, jobConcurrency int) *crawler {
 	c := &crawler{
 		disc:            disc,
 		peerStore:       peerStore,
 		historyStore:    historyStore,
 		ipResolver:      ipResolver,
-		privateKey:      privateKey,
 		iter:            iter,
 		nodeCh:          make(chan *enode.Node),
 		host:            host,
