@@ -15,9 +15,9 @@ import (
 	beacon "github.com/protolambda/zrnt/eth2/beacon/common"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 )
 
@@ -43,7 +43,7 @@ type idService interface {
 
 // NewHost initializes custom host
 func NewHost(opt ...libp2p.Option) (Host, error) {
-	h, err := libp2p.New(context.Background(), opt...)
+	h, err := libp2p.New(opt...)
 	if err != nil {
 		return nil, err
 	}

@@ -19,9 +19,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
-	ic "github.com/libp2p/go-libp2p-core/crypto"
-	noise "github.com/libp2p/go-libp2p-noise"
-	"github.com/libp2p/go-tcp-transport"
+	ic "github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -54,8 +54,12 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 	if err != nil {
 		return err
 	}
+	privKey, _, err := ic.ECDSAKeyPairFromKey(listenCfg.privateKey)
+	if err != nil {
+		return err
+	}
 	host, err := p2p.NewHost(
-		libp2p.Identity(convertToInterfacePrivkey(listenCfg.privateKey)),
+		libp2p.Identity(privKey),
 		libp2p.ListenAddrs(listenAddrs),
 		libp2p.UserAgent("Eth2-Crawler"),
 		libp2p.Transport(tcp.NewTCPTransport),
@@ -79,11 +83,6 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 	}
 	scheduler.Start()
 	return nil
-}
-
-func convertToInterfacePrivkey(privkey *ecdsa.PrivateKey) ic.PrivKey {
-	typeAssertedKey := ic.PrivKey((*ic.Secp256k1PrivateKey)(privkey))
-	return typeAssertedKey
 }
 
 func multiAddressBuilder(ipAddr net.IP, port int) (ma.Multiaddr, error) {

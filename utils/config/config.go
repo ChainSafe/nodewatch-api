@@ -7,7 +7,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -61,7 +60,7 @@ func loadResolverAPIKey() (string, error) {
 
 // Load returns Configuration struct
 func Load(path string) (*Configuration, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file, %w", err)
