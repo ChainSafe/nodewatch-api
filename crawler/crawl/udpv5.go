@@ -11,6 +11,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/enr"
@@ -37,8 +39,12 @@ func startV5(listenCfg *listenConfig) (*discover.UDPv5, error) {
 // getDiscoveryConfig returns config for listening v5 node for peer discovery
 func getDiscoveryConfig(listenCfg *listenConfig) (*enode.LocalNode, *discover.Config, error) {
 	cfg := new(discover.Config)
+	pk, err := crypto.GenerateKey()
+	if err != nil {
+		return nil, nil, err
+	}
 
-	cfg.PrivateKey = listenCfg.privateKey
+	cfg.PrivateKey = pk
 	bootNodes, err := parseBootNodes(listenCfg.bootNodeAddrs)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error parsing bootnodes: %w", err)
