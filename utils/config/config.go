@@ -7,7 +7,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -22,10 +21,11 @@ type Configuration struct {
 
 // Server holds data necessary for server configuration
 type Server struct {
-	Port         string   `yaml:"port,omitempty"`
-	ReadTimeout  int      `yaml:"read_timeout_seconds,omitempty"`
-	WriteTimeout int      `yaml:"write_timeout_seconds,omitempty"`
-	CORS         []string `yaml:"cors,omitempty"`
+	Port              string   `yaml:"port,omitempty"`
+	ReadTimeout       int      `yaml:"read_timeout_seconds,omitempty"`
+	ReadHeaderTimeout int      `yaml:"read_header_timeout_seconds,omitempty"`
+	WriteTimeout      int      `yaml:"write_timeout_seconds,omitempty"`
+	CORS              []string `yaml:"cors,omitempty"`
 }
 
 // Database is a MongoDB config
@@ -61,7 +61,7 @@ func loadResolverAPIKey() (string, error) {
 
 // Load returns Configuration struct
 func Load(path string) (*Configuration, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file, %w", err)

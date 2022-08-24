@@ -33,6 +33,9 @@ license-check:
 test:
 	go test ./...
 
+build:
+	go build -o ./bin/crawler cmd/main.go
+
 run:
 	@echo "  >  \033[32mUsing Docker Container for development...\033[0m "
 	@echo "  >  \033[32mRemoving old User Service stuff...\033[0m "

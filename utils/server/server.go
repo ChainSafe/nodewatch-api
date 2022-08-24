@@ -25,10 +25,11 @@ func Start(ctx context.Context, cfg *config.Server, handler http.Handler) {
 	})
 
 	server := &http.Server{
-		Addr:         ":" + cfg.Port,
-		ReadTimeout:  time.Duration(cfg.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(cfg.WriteTimeout) * time.Second,
-		Handler:      cors.Handler(handler),
+		Addr:              ":" + cfg.Port,
+		ReadTimeout:       time.Duration(cfg.ReadTimeout) * time.Second,
+		ReadHeaderTimeout: time.Duration(cfg.ReadHeaderTimeout) * time.Second,
+		WriteTimeout:      time.Duration(cfg.WriteTimeout) * time.Second,
+		Handler:           cors.Handler(handler),
 	}
 
 	go func() {
