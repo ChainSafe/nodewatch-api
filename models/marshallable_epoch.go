@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 )
 
-// Epoch type is needed to support proper BSON marshalling and unmarshalling to/from MongoDB.
+// Epoch type is needed to support proper BSON marshaling and unmarshaling to/from MongoDB.
 type Epoch common.Epoch
 
 func (e *Epoch) MarshalBSONValue() (bsontype.Type, []byte, error) {
@@ -22,7 +22,10 @@ func (e *Epoch) MarshalBSONValue() (bsontype.Type, []byte, error) {
 func (e *Epoch) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
 	var container string
 	rv := bson.RawValue{Type: t, Value: b}
-	rv.Unmarshal(&container)
+	err := rv.Unmarshal(&container)
+	if err != nil {
+		return err
+	}
 	val, err := fromHexString(container)
 	if err != nil {
 		return err

@@ -1,9 +1,8 @@
+//go:generate go run github.com/99designs/gqlgen generate
 // Copyright 2021 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
 // Package graph contans graph related code
-//go:generate go run github.com/99designs/gqlgen generate
-
 package graph
 
 import (

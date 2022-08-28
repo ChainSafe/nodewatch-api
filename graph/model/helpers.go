@@ -1,6 +1,7 @@
 // Copyright 2022 ChainSafe Systems
 // SPDX-License-Identifier: LGPL-3.0-only
 
+// Package model contains auto-generated files as well as helper funtions
 package model
 
 import (
