@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"eth2-crawler/crawler"
@@ -22,10 +23,12 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
 func main() {
 	cfgPath := flag.String("p", "./cmd/config/config.dev.yaml", "The configuration path")
+	allowedForkDigests := flag.String("allowed-fork-digests", "", "Filter nodes by fork digest values")
 	flag.Parse()
 
 	cfg, err := config.Load(*cfgPath)
@@ -48,8 +51,13 @@ func main() {
 		log.Fatalf("error Initializing the ip resolver: %s", err.Error())
 	}
 
+	forkDigestMap, err := initForkDigestsMap(*allowedForkDigests)
+	if err != nil {
+		log.Fatalf("error Initializing the forkDigest map: %s", err.Error())
+	}
+
 	// TODO collect config from a config files or from command args and pass to Start()
-	go crawler.Start(peerStore, historyStore, resolverService)
+	go crawler.Start(peerStore, historyStore, resolverService, forkDigestMap)
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(peerStore, historyStore)}))
 
@@ -63,4 +71,25 @@ func main() {
 	})
 
 	server.Start(context.TODO(), cfg.Server, router)
+}
+
+// initForkDigestsMap creates ForkDigest map from given string
+func initForkDigestsMap(allowList string) (map[common.ForkDigest]struct{}, error) {
+	allowMap := make(map[common.ForkDigest]struct{})
+
+	if allowList == "" {
+		return allowMap, nil
+	}
+
+	for _, a := range strings.Split(allowList, ",") {
+		forkDigest := common.ForkDigest{}
+
+		if err := forkDigest.UnmarshalText([]byte(a)); err != nil {
+			return nil, fmt.Errorf("unmarshal string %s to ForkDigest: %w", a, err)
+		}
+
+		allowMap[forkDigest] = struct{}{}
+	}
+
+	return allowMap, nil
 }

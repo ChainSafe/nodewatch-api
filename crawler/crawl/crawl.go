@@ -6,6 +6,8 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
+	"time"
+
 	"eth2-crawler/crawler/p2p"
 	reqresp "eth2-crawler/crawler/rpc/request"
 	"eth2-crawler/crawler/util"
@@ -13,7 +15,6 @@ import (
 	ipResolver "eth2-crawler/resolver"
 	"eth2-crawler/store/peerstore"
 	"eth2-crawler/store/record"
-	"time"
 
 	"github.com/protolambda/zrnt/eth2/beacon/common"
 
@@ -22,16 +23,17 @@ import (
 )
 
 type crawler struct {
-	disc            resolver
-	peerStore       peerstore.Provider
-	historyStore    record.Provider
-	ipResolver      ipResolver.Provider
-	iter            enode.Iterator
-	nodeCh          chan *enode.Node
-	privateKey      *ecdsa.PrivateKey
-	host            p2p.Host
-	jobs            chan *models.Peer
-	jobsConcurrency int
+	disc              resolver
+	peerStore         peerstore.Provider
+	historyStore      record.Provider
+	ipResolver        ipResolver.Provider
+	iter              enode.Iterator
+	nodeCh            chan *enode.Node
+	privateKey        *ecdsa.PrivateKey
+	host              p2p.Host
+	jobs              chan *models.Peer
+	jobsConcurrency   int
+	allowedForkDigest map[common.ForkDigest]struct{}
 }
 
 // resolver holds methods of discovery v5
@@ -42,18 +44,19 @@ type resolver interface {
 // newCrawler inits new crawler service
 func newCrawler(disc resolver, peerStore peerstore.Provider, historyStore record.Provider,
 	ipResolver ipResolver.Provider, privateKey *ecdsa.PrivateKey, iter enode.Iterator,
-	host p2p.Host, jobConcurrency int) *crawler {
+	host p2p.Host, jobConcurrency int, allowedForkDigest map[common.ForkDigest]struct{}) *crawler {
 	c := &crawler{
-		disc:            disc,
-		peerStore:       peerStore,
-		historyStore:    historyStore,
-		ipResolver:      ipResolver,
-		privateKey:      privateKey,
-		iter:            iter,
-		nodeCh:          make(chan *enode.Node),
-		host:            host,
-		jobs:            make(chan *models.Peer, jobConcurrency),
-		jobsConcurrency: jobConcurrency,
+		disc:              disc,
+		peerStore:         peerStore,
+		historyStore:      historyStore,
+		ipResolver:        ipResolver,
+		privateKey:        privateKey,
+		iter:              iter,
+		nodeCh:            make(chan *enode.Node),
+		host:              host,
+		jobs:              make(chan *models.Peer, jobConcurrency),
+		jobsConcurrency:   jobConcurrency,
+		allowedForkDigest: allowedForkDigest,
 	}
 	return c
 }
@@ -96,6 +99,14 @@ func (c *crawler) storePeer(ctx context.Context, node *enode.Node) {
 	if err != nil { // not eth2 nodes
 		return
 	}
+
+	// filter nodes by forkDigest
+	if len(c.allowedForkDigest) != 0 {
+		if _, ok := c.allowedForkDigest[eth2Data.ForkDigest]; !ok {
+			return
+		}
+	}
+
 	log.Debug("found a eth2 node", log.Ctx{"node": node})
 
 	// get basic info

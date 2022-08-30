@@ -11,12 +11,17 @@ import (
 	"eth2-crawler/store/record"
 
 	"github.com/ethereum/go-ethereum/log"
-
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
 // Start starts the crawler service
-func Start(peerStore peerstore.Provider, historyStore record.Provider, ipResolver ipResolver.Provider) {
+func Start(
+	peerStore peerstore.Provider,
+	historyStore record.Provider,
+	ipResolver ipResolver.Provider,
+	allowedForkDigest map[common.ForkDigest]struct{},
+) {
 	h := log.CallerFileHandler(log.StdoutHandler)
 	log.Root().SetHandler(h)
 
@@ -25,7 +30,7 @@ func Start(peerStore peerstore.Provider, historyStore record.Provider, ipResolve
 	)
 	log.Root().SetHandler(handler)
 
-	err := crawl.Initialize(peerStore, historyStore, ipResolver, params.V5Bootnodes)
+	err := crawl.Initialize(peerStore, historyStore, ipResolver, params.V5Bootnodes, allowedForkDigest)
 	if err != nil {
 		panic(err)
 	}

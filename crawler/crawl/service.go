@@ -7,8 +7,6 @@ package crawl
 import (
 	"context"
 	"crypto/ecdsa"
-	"eth2-crawler/store/peerstore"
-	"eth2-crawler/store/record"
 	"fmt"
 	"net"
 
@@ -16,6 +14,8 @@ import (
 
 	"eth2-crawler/crawler/p2p"
 	ipResolver "eth2-crawler/resolver"
+	"eth2-crawler/store/peerstore"
+	"eth2-crawler/store/record"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p"
@@ -23,6 +23,7 @@ import (
 	noise "github.com/libp2p/go-libp2p-noise"
 	"github.com/libp2p/go-tcp-transport"
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/protolambda/zrnt/eth2/beacon/common"
 )
 
 // listenConfig holds configuration for running v5discovry node
@@ -35,7 +36,13 @@ type listenConfig struct {
 }
 
 // Initialize initializes the core crawler component
-func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipResolver ipResolver.Provider, bootNodeAddrs []string) error {
+func Initialize(
+	peerStore peerstore.Provider,
+	historyStore record.Provider,
+	ipResolver ipResolver.Provider,
+	bootNodeAddrs []string,
+	allowedForkDigest map[common.ForkDigest]struct{},
+) error {
 	ctx := context.Background()
 	pkey, _ := crypto.GenerateKey()
 	listenCfg := &listenConfig{
@@ -66,7 +73,18 @@ func Initialize(peerStore peerstore.Provider, historyStore record.Provider, ipRe
 		return err
 	}
 
-	c := newCrawler(disc, peerStore, historyStore, ipResolver, listenCfg.privateKey, disc.RandomNodes(), host, 200)
+	c := newCrawler(
+		disc,
+		peerStore,
+		historyStore,
+		ipResolver,
+		listenCfg.privateKey,
+		disc.RandomNodes(),
+		host,
+		200,
+		allowedForkDigest,
+	)
+
 	go c.start(ctx)
 	// scheduler for updating peer
 	go c.updatePeer(ctx)
