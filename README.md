@@ -20,7 +20,14 @@ RESOLVER_API_KEY=your_ip_data_key
 ```
 
 ### Configs and Flags
-Eth2 crawler support config through yaml files. Default yaml config is provided at `cmd/config/config.dev.yaml`. You can use your own config file by providing it's path using the `-p` flag 
+Eth2 crawler support config through yaml files. Default yaml config is provided at `cmd/config/config.dev.yaml`. You can use your own config file by providing it's path using the `-p` flag
+
+#### allowed-fork-digests
+You can use `allowed-fork-digests` flag to filter nodes by specific `Fork Digest`
+
+```shell
+./crawler --allowed-fork-digests 0xafcaaba0,0xe7acb210
+```
 
 ### Usage
 We use docker-compose for testing locally. Once you have defined the environment variable in the `.env` file, you can start the server using:
