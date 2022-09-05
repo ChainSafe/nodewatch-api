@@ -42,13 +42,13 @@ var clients map[ClientName][]string
 
 func init() {
 	clients = map[ClientName][]string{
-		PrysmClient:      []string{"prysm"},
-		LighthouseClient: []string{"lighthouse"},
-		TekuClient:       []string{"teku"},
-		CortexClient:     []string{"cortex"},
-		LodestarClient:   []string{"lodestar", "js-libp2p"},
-		NimbusClient:     []string{"nimbus"},
-		TrinityClient:    []string{"trinity"},
+		PrysmClient:      {"prysm"},
+		LighthouseClient: {"lighthouse"},
+		TekuClient:       {"teku"},
+		CortexClient:     {"cortex"},
+		LodestarClient:   {"lodestar", "js-libp2p"},
+		NimbusClient:     {"nimbus"},
+		TrinityClient:    {"trinity"},
 	}
 }
 
@@ -142,6 +142,7 @@ type Peer struct {
 	Attnets common.AttnetBits `json:"enr_attnets,omitempty" bson:"attnets"`
 
 	ForkDigest      common.ForkDigest `json:"fork_digest" bson:"fork_digest"`
+	NextForkEpoch   Epoch             `json:"next_fork_epoch" bson:"next_fork_epoch"`
 	NextForkVersion common.Version    `json:"next_fork_version" bson:"next_fork_version"`
 
 	ProtocolVersion string       `json:"protocol_version,omitempty" bson:"protocol_version"`
@@ -188,6 +189,7 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		Addrs:           addrStr,
 		ForkDigest:      eth2Data.ForkDigest,
 		NextForkVersion: eth2Data.NextForkVersion,
+		NextForkEpoch:   Epoch(eth2Data.NextForkEpoch),
 		Attnets:         attnetsVal,
 		Score:           ScoreGood,
 	}, nil

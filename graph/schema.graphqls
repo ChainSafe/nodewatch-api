@@ -3,6 +3,12 @@ type AggregateData {
   count: Int!
 }
 
+type NextHardforkAggregation {
+  version: String!
+  epoch: String!
+  count: Int!
+}
+
 type ClientVersionAggregation {
   client: String!
   count: Int!
@@ -43,6 +49,7 @@ type Query {
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
+  aggregateByHardforkSchedule: [NextHardforkAggregation!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
   getHeatmapData: [HeatmapData!]!
   getNodeStats: NodeStats!
