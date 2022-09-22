@@ -44,14 +44,18 @@ type HeatmapData {
   country:     String!
 }
 
+input PeerFilter {
+  forkDigest: String
+}
+
 type Query {
   aggregateByAgentName: [AggregateData!]!
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
-  aggregateByHardforkSchedule: [NextHardforkAggregation!]!
+  aggregateByHardforkSchedule(peerFilter: PeerFilter): [NextHardforkAggregation!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
-  getHeatmapData: [HeatmapData!]!
+  getHeatmapData(peerFilter: PeerFilter): [HeatmapData!]!
   getNodeStats: NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
   getRegionalStats: RegionalStats!

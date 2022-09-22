@@ -6,7 +6,9 @@ package mongo
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"eth2-crawler/graph/model"
 	"eth2-crawler/store/peerstore"
 	"fmt"
 	"time"
@@ -91,9 +93,31 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 }
 
 // Todo: accept filter and find options to get limited information
-func (s *mongoStore) ViewAll(ctx context.Context) ([]*models.Peer, error) {
+func (s *mongoStore) ViewAll(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.Peer, error) {
 	var peers []*models.Peer
-	cursor, err := s.coll.Find(ctx, bson.D{{Key: "is_connectable", Value: true}})
+
+	query := mongo.Pipeline{
+		bson.D{
+			{Key: "$match", Value: bson.D{{Key: "is_connectable", Value: true}}},
+		},
+	}
+
+	if peerFilter != nil &&
+		peerFilter.ForkDigest != nil {
+		forkDigest := *(peerFilter.ForkDigest)
+		if forkDigest[0:2] == "0x" {
+			forkDigest = forkDigest[2:]
+		}
+		forkDigestBytes, err := hex.DecodeString(forkDigest)
+		if err != nil {
+			return nil, err
+		}
+		query = append(query, bson.D{
+			{Key: "$match", Value: bson.D{{Key: "fork_digest", Value: forkDigestBytes}}},
+		})
+	}
+
+	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
 	}

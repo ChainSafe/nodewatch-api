@@ -1,6 +1,3 @@
-// Copyright 2022 ChainSafe Systems
-// SPDX-License-Identifier: LGPL-3.0-only
-
 package graph
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
@@ -81,8 +78,8 @@ func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.Aggreg
 }
 
 // AggregateByHardforkSchedule is the resolver for the aggregateByHardforkSchedule field.
-func (r *queryResolver) AggregateByHardforkSchedule(ctx context.Context) ([]*model.NextHardforkAggregation, error) {
-	allPeers, err := r.peerStore.ViewAll(ctx)
+func (r *queryResolver) AggregateByHardforkSchedule(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.NextHardforkAggregation, error) {
+	allPeers, err := r.peerStore.ViewAll(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -125,8 +122,8 @@ func (r *queryResolver) AggregateByClientVersion(ctx context.Context) ([]*model.
 }
 
 // GetHeatmapData is the resolver for the getHeatmapData field.
-func (r *queryResolver) GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error) {
-	peers, err := r.peerStore.ViewAll(ctx)
+func (r *queryResolver) GetHeatmapData(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.HeatmapData, error) {
+	peers, err := r.peerStore.ViewAll(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}

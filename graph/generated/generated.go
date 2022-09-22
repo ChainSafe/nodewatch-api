@@ -87,11 +87,11 @@ type ComplexityRoot struct {
 		AggregateByAgentName        func(childComplexity int) int
 		AggregateByClientVersion    func(childComplexity int) int
 		AggregateByCountry          func(childComplexity int) int
-		AggregateByHardforkSchedule func(childComplexity int) int
+		AggregateByHardforkSchedule func(childComplexity int, peerFilter *model.PeerFilter) int
 		AggregateByNetwork          func(childComplexity int) int
 		AggregateByOperatingSystem  func(childComplexity int) int
 		GetAltairUpgradePercentage  func(childComplexity int) int
-		GetHeatmapData              func(childComplexity int) int
+		GetHeatmapData              func(childComplexity int, peerFilter *model.PeerFilter) int
 		GetNodeStats                func(childComplexity int) int
 		GetNodeStatsOverTime        func(childComplexity int, start float64, end float64) int
 		GetRegionalStats            func(childComplexity int) int
@@ -109,9 +109,9 @@ type QueryResolver interface {
 	AggregateByCountry(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByOperatingSystem(ctx context.Context) ([]*model.AggregateData, error)
 	AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error)
-	AggregateByHardforkSchedule(ctx context.Context) ([]*model.NextHardforkAggregation, error)
+	AggregateByHardforkSchedule(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.NextHardforkAggregation, error)
 	AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error)
-	GetHeatmapData(ctx context.Context) ([]*model.HeatmapData, error)
+	GetHeatmapData(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.HeatmapData, error)
 	GetNodeStats(ctx context.Context) (*model.NodeStats, error)
 	GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error)
 	GetRegionalStats(ctx context.Context) (*model.RegionalStats, error)
@@ -313,7 +313,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.AggregateByHardforkSchedule(childComplexity), true
+		args, err := ec.field_Query_aggregateByHardforkSchedule_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AggregateByHardforkSchedule(childComplexity, args["peerFilter"].(*model.PeerFilter)), true
 
 	case "Query.aggregateByNetwork":
 		if e.complexity.Query.AggregateByNetwork == nil {
@@ -341,7 +346,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.GetHeatmapData(childComplexity), true
+		args, err := ec.field_Query_getHeatmapData_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetHeatmapData(childComplexity, args["peerFilter"].(*model.PeerFilter)), true
 
 	case "Query.getNodeStats":
 		if e.complexity.Query.GetNodeStats == nil {
@@ -397,7 +407,9 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
-	inputUnmarshalMap := graphql.BuildUnmarshalerMap()
+	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputPeerFilter,
+	)
 	first := true
 
 	switch rc.Operation.Operation {
@@ -488,14 +500,18 @@ type HeatmapData {
   country:     String!
 }
 
+input PeerFilter {
+  forkDigest: String
+}
+
 type Query {
   aggregateByAgentName: [AggregateData!]!
   aggregateByCountry: [AggregateData!]!
   aggregateByOperatingSystem: [AggregateData!]!
   aggregateByNetwork: [AggregateData!]!
-  aggregateByHardforkSchedule: [NextHardforkAggregation!]!
+  aggregateByHardforkSchedule(peerFilter: PeerFilter): [NextHardforkAggregation!]!
   aggregateByClientVersion: [ClientVersionAggregation!]!
-  getHeatmapData: [HeatmapData!]!
+  getHeatmapData(peerFilter: PeerFilter): [HeatmapData!]!
   getNodeStats: NodeStats!
   getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
   getRegionalStats: RegionalStats!
@@ -520,6 +536,36 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_aggregateByHardforkSchedule_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PeerFilter
+	if tmp, ok := rawArgs["peerFilter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("peerFilter"))
+		arg0, err = ec.unmarshalOPeerFilter2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐPeerFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["peerFilter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getHeatmapData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.PeerFilter
+	if tmp, ok := rawArgs["peerFilter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("peerFilter"))
+		arg0, err = ec.unmarshalOPeerFilter2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐPeerFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["peerFilter"] = arg0
 	return args, nil
 }
 
@@ -1773,7 +1819,7 @@ func (ec *executionContext) _Query_aggregateByHardforkSchedule(ctx context.Conte
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AggregateByHardforkSchedule(rctx)
+		return ec.resolvers.Query().AggregateByHardforkSchedule(rctx, fc.Args["peerFilter"].(*model.PeerFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1807,6 +1853,17 @@ func (ec *executionContext) fieldContext_Query_aggregateByHardforkSchedule(ctx c
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NextHardforkAggregation", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_aggregateByHardforkSchedule_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -1877,7 +1934,7 @@ func (ec *executionContext) _Query_getHeatmapData(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetHeatmapData(rctx)
+		return ec.resolvers.Query().GetHeatmapData(rctx, fc.Args["peerFilter"].(*model.PeerFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1919,6 +1976,17 @@ func (ec *executionContext) fieldContext_Query_getHeatmapData(ctx context.Contex
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HeatmapData", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getHeatmapData_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -4170,6 +4238,34 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputPeerFilter(ctx context.Context, obj interface{}) (model.PeerFilter, error) {
+	var it model.PeerFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"forkDigest"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "forkDigest":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forkDigest"))
+			it.ForkDigest, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -5748,6 +5844,14 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOPeerFilter2ᚖeth2ᚑcrawlerᚋgraphᚋmodelᚐPeerFilter(ctx context.Context, v interface{}) (*model.PeerFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPeerFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
