@@ -1,0 +1,54 @@
+# this workflow will try to lint and build a node.js application
+#
+# this is useful for stages that you require to make sure everything is working
+# properly before creating a container image to be pushed on the cloud
+#
+name: Build & Push Docker Image to AWS ECR
+
+on:
+  push:
+    tags:
+      - v*
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
+
+jobs:
+  build:
+    name: build_prod
+    runs-on: ubuntu-latest
+
+    steps:
+      # download the source code into the runner
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: short sha
+        id: vars
+        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+
+      # gather metadata from git & github actions to reference in docker
+      - name: git & github metadata
+        id: metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
+
+      # login in docker repository
+      - name: docker login
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # build a docker image
+      - name: docker & push image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}:latest
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}:${{ steps.vars.outputs.sha }}

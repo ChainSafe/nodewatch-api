@@ -1,0 +1,190 @@
+name: Deploy
+on:
+  workflow_call:
+    inputs:
+      ASSUME_ROLE:
+          required: true
+          type: string
+      AWS_REGION:
+          required: true
+          type: string
+      ECS_CLUSTER:
+          required: true
+          type: string
+      IMAGE_TAG:
+          required: false
+          type: string
+      ENV:
+          required: true
+          type: string
+
+env:
+  PROD_ECR_REGISTRY: "381177214925.dkr.ecr.us-east-2.amazonaws.com/nodewatch-prod-ecr"
+
+jobs:
+  user-service-deploy:
+    name: USER-${{ inputs.ENV }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.ASSUME_ROLE }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: GithubAction
+      - name: Fill api-init image ID in the task definition
+        id: fill-api-init-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition/${{ inputs.ENV }}/user.json
+          container-name: api-init
+          image: ${{env.PROD_ECR_REGISTRY_USER}}:${{ inputs.IMAGE_TAG}}
+      - name: Fill api image ID in the task definition
+        id: fill-api-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.fill-api-init-task-def.outputs.task-definition }}
+          container-name: api
+          image: ${{env.PROD_ECR_REGISTRY_USER}}:${{ inputs.IMAGE_TAG}}
+      -  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+         with:
+           task-definition: ${{ steps.fill-api-task-def.outputs.task-definition }}
+           service: user-${{ inputs.ENV }}-service
+           cluster: ${{ inputs.ECS_CLUSTER}}
+           wait-for-service-stability: true
+
+  billing-service-deploy:
+    name: BILLING-${{ inputs.ENV }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.ASSUME_ROLE }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: GithubAction
+      - name: Fill api-init image ID in the task definition
+        id: fill-api-init-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition/${{ inputs.ENV }}/billing.json
+          container-name: api-init
+          image: ${{env.PROD_ECR_REGISTRY_BILLING}}:${{ inputs.IMAGE_TAG}}
+      - name: Fill api image ID in the task definition
+        id: fill-api-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.fill-api-init-task-def.outputs.task-definition }}
+          container-name: api
+          image: ${{env.PROD_ECR_REGISTRY_BILLING}}:${{ inputs.IMAGE_TAG}}
+      -  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+         with:
+           task-definition: ${{ steps.fill-api-task-def.outputs.task-definition }}
+           service: billing-${{ inputs.ENV }}-service
+           cluster: ${{ inputs.ECS_CLUSTER}}
+           wait-for-service-stability: true
+
+  files-service-deploy:
+    name: FILES-${{ inputs.ENV }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.ASSUME_ROLE }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: GithubAction
+      - name: Fill api-init image ID in the task definition
+        id: fill-api-init-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition/${{ inputs.ENV }}/files.json
+          container-name: api-init
+          image:  ${{env.PROD_ECR_REGISTRY_FILES}}:${{ inputs.IMAGE_TAG}}
+      - name: Fill api image ID in the task definition
+        id: fill-api-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.fill-api-init-task-def.outputs.task-definition }}
+          container-name: api
+          image: ${{env.PROD_ECR_REGISTRY_FILES}}:${{ inputs.IMAGE_TAG}}
+      -  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+         with:
+           task-definition: ${{ steps.fill-api-task-def.outputs.task-definition }}
+           service: files-${{ inputs.ENV }}-service
+           cluster: ${{ inputs.ECS_CLUSTER}}
+           wait-for-service-stability: true
+  
+  pinning-service-deploy:
+    name: PINNING-${{ inputs.ENV }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.ASSUME_ROLE }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: GithubAction
+      - name: Fill api-init image ID in the task definition
+        id: fill-api-init-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition/${{ inputs.ENV }}/pinning.json
+          container-name: api-init
+          image: ${{env.PROD_ECR_REGISTRY_PINNING}}:${{ inputs.IMAGE_TAG}}
+      - name: Fill api image ID in the task definition
+        id: fill-api-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.fill-api-init-task-def.outputs.task-definition }}
+          container-name: api
+          image: ${{env.PROD_ECR_REGISTRY_PINNING}}:${{ inputs.IMAGE_TAG}}
+      -  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+         with:
+           task-definition: ${{ steps.fill-api-task-def.outputs.task-definition }}
+           service: pinning-${{ inputs.ENV }}-service
+           cluster: ${{ inputs.ECS_CLUSTER}}
+           wait-for-service-stability: true
+
+  search-service-deploy:
+    name: SEARCH-${{ inputs.ENV }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ inputs.ASSUME_ROLE }}
+          aws-region: ${{ inputs.AWS_REGION }}
+          role-session-name: GithubAction
+      - name: Fill api image ID in the task definition
+        id: fill-api-task-def
+        if: inputs.ENV == 'prod'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition/${{ inputs.ENV }}/search.json
+          container-name: api
+          image: ${{env.PROD_ECR_REGISTRY_SEARCH}}:${{ inputs.IMAGE_TAG}}
+      -  uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+         with:
+           task-definition: ${{ steps.fill-api-task-def.outputs.task-definition }}
+           service: search-${{ inputs.ENV }}-service
+           cluster: ${{ inputs.ECS_CLUSTER}}
+           wait-for-service-stability: true
