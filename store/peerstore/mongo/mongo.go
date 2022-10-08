@@ -253,20 +253,20 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context, peerFilter *m
 		}},
 	},
 
-	bson.D{
-		{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: "$_id.client"},
-			{Key: "versions", Value: bson.D{
-				{Key: "$push", Value: bson.D{
-					{Key: "name", Value: "$_id.version"},
-					{Key: "count", Value: "$versionCount"},
+		bson.D{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: "$_id.client"},
+				{Key: "versions", Value: bson.D{
+					{Key: "$push", Value: bson.D{
+						{Key: "name", Value: "$_id.version"},
+						{Key: "count", Value: "$versionCount"},
+					}},
+				}},
+				{Key: "count", Value: bson.D{
+					{Key: "$sum", Value: "$versionCount"},
 				}},
 			}},
-			{Key: "count", Value: bson.D{
-				{Key: "$sum", Value: "$versionCount"},
-			}},
-		}},
-	})
+		})
 
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
