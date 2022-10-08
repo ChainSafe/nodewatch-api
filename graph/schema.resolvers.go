@@ -1,6 +1,3 @@
-// Copyright 2022 ChainSafe Systems
-// SPDX-License-Identifier: LGPL-3.0-only
-
 package graph
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
@@ -14,8 +11,8 @@ import (
 )
 
 // AggregateByAgentName is the resolver for the aggregateByAgentName field.
-func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.AggregateData, error) {
-	aggregateData, err := r.peerStore.AggregateByAgentName(ctx)
+func (r *queryResolver) AggregateByAgentName(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.AggregateData, error) {
+	aggregateData, err := r.peerStore.AggregateByAgentName(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +28,8 @@ func (r *queryResolver) AggregateByAgentName(ctx context.Context) ([]*model.Aggr
 }
 
 // AggregateByCountry is the resolver for the aggregateByCountry field.
-func (r *queryResolver) AggregateByCountry(ctx context.Context) ([]*model.AggregateData, error) {
-	aggregateData, err := r.peerStore.AggregateByCountry(ctx)
+func (r *queryResolver) AggregateByCountry(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.AggregateData, error) {
+	aggregateData, err := r.peerStore.AggregateByCountry(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +45,8 @@ func (r *queryResolver) AggregateByCountry(ctx context.Context) ([]*model.Aggreg
 }
 
 // AggregateByOperatingSystem is the resolver for the aggregateByOperatingSystem field.
-func (r *queryResolver) AggregateByOperatingSystem(ctx context.Context) ([]*model.AggregateData, error) {
-	aggregateData, err := r.peerStore.AggregateByOperatingSystem(ctx)
+func (r *queryResolver) AggregateByOperatingSystem(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.AggregateData, error) {
+	aggregateData, err := r.peerStore.AggregateByOperatingSystem(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +62,8 @@ func (r *queryResolver) AggregateByOperatingSystem(ctx context.Context) ([]*mode
 }
 
 // AggregateByNetwork is the resolver for the aggregateByNetwork field.
-func (r *queryResolver) AggregateByNetwork(ctx context.Context) ([]*model.AggregateData, error) {
-	aggregateData, err := r.peerStore.AggregateByNetworkType(ctx)
+func (r *queryResolver) AggregateByNetwork(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.AggregateData, error) {
+	aggregateData, err := r.peerStore.AggregateByNetworkType(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -100,8 +97,8 @@ func (r *queryResolver) AggregateByHardforkSchedule(ctx context.Context, peerFil
 }
 
 // AggregateByClientVersion is the resolver for the aggregateByClientVersion field.
-func (r *queryResolver) AggregateByClientVersion(ctx context.Context) ([]*model.ClientVersionAggregation, error) {
-	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
+func (r *queryResolver) AggregateByClientVersion(ctx context.Context, peerFilter *model.PeerFilter) ([]*model.ClientVersionAggregation, error) {
+	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +152,8 @@ func (r *queryResolver) GetHeatmapData(ctx context.Context, peerFilter *model.Pe
 }
 
 // GetNodeStats is the resolver for the getNodeStats field.
-func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, error) {
-	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx)
+func (r *queryResolver) GetNodeStats(ctx context.Context, peerFilter *model.PeerFilter) (*model.NodeStats, error) {
+	aggregateData, err := r.peerStore.AggregateBySyncStatus(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +165,8 @@ func (r *queryResolver) GetNodeStats(ctx context.Context) (*model.NodeStats, err
 }
 
 // GetNodeStatsOverTime is the resolver for the getNodeStatsOverTime field.
-func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64, end float64) ([]*model.NodeStatsOverTime, error) {
-	data, err := r.historyStore.GetHistory(ctx, int64(start), int64(end))
+func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64, end float64, peerFilter *model.PeerFilter) ([]*model.NodeStatsOverTime, error) {
+	data, err := r.historyStore.GetHistory(ctx, int64(start), int64(end), peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -186,13 +183,13 @@ func (r *queryResolver) GetNodeStatsOverTime(ctx context.Context, start float64,
 }
 
 // GetRegionalStats is the resolver for the getRegionalStats field.
-func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalStats, error) {
-	countryAggrData, err := r.peerStore.AggregateByCountry(ctx)
+func (r *queryResolver) GetRegionalStats(ctx context.Context, peerFilter *model.PeerFilter) (*model.RegionalStats, error) {
+	countryAggrData, err := r.peerStore.AggregateByCountry(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
 
-	networkAggrData, err := r.peerStore.AggregateByNetworkType(ctx)
+	networkAggrData, err := r.peerStore.AggregateByNetworkType(ctx, peerFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -216,8 +213,8 @@ func (r *queryResolver) GetRegionalStats(ctx context.Context) (*model.RegionalSt
 }
 
 // GetAltairUpgradePercentage is the resolver for the getAltairUpgradePercentage field.
-func (r *queryResolver) GetAltairUpgradePercentage(ctx context.Context) (float64, error) {
-	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx)
+func (r *queryResolver) GetAltairUpgradePercentage(ctx context.Context, peerFilter *model.PeerFilter) (float64, error) {
+	aggregateData, err := r.peerStore.AggregateByClientVersion(ctx, peerFilter)
 	if err != nil {
 		return 0, err
 	}

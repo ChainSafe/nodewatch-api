@@ -49,15 +49,15 @@ input PeerFilter {
 }
 
 type Query {
-  aggregateByAgentName: [AggregateData!]!
-  aggregateByCountry: [AggregateData!]!
-  aggregateByOperatingSystem: [AggregateData!]!
-  aggregateByNetwork: [AggregateData!]!
+  aggregateByAgentName(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByCountry(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByOperatingSystem(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByNetwork(peerFilter: PeerFilter): [AggregateData!]!
   aggregateByHardforkSchedule(peerFilter: PeerFilter): [NextHardforkAggregation!]!
-  aggregateByClientVersion: [ClientVersionAggregation!]!
+  aggregateByClientVersion(peerFilter: PeerFilter): [ClientVersionAggregation!]!
   getHeatmapData(peerFilter: PeerFilter): [HeatmapData!]!
-  getNodeStats: NodeStats!
-  getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
-  getRegionalStats: RegionalStats!
-  getAltairUpgradePercentage: Float!
+  getNodeStats(peerFilter: PeerFilter): NodeStats!
+  getNodeStatsOverTime(start: Float!, end: Float!, peerFilter: PeerFilter): [NodeStatsOverTime!]!
+  getRegionalStats(peerFilter: PeerFilter): RegionalStats!
+  getAltairUpgradePercentage(peerFilter: PeerFilter): Float!
 }
