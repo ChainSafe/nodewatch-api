@@ -108,6 +108,19 @@ func AddForkDigestFilterToQueryPipeline(query mongo.Pipeline, peerFilter *model.
 	return query, nil
 }
 
+func AddPeerFilterToQueryPipeline(query mongo.Pipeline, peerFilter *model.PeerFilter) (mongo.Pipeline, error) {
+	var err error
+	if peerFilter != nil &&
+		peerFilter.ForkDigest != nil {
+		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return query, nil
+}
+
 // Todo: accept filter and find options to get limited information
 func (s *mongoStore) ViewAll(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.Peer, error) {
 	var peers []*models.Peer
@@ -119,12 +132,9 @@ func (s *mongoStore) ViewAll(ctx context.Context, peerFilter *model.PeerFilter) 
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	cursor, err := s.coll.Aggregate(ctx, query)
@@ -185,12 +195,9 @@ func (s *mongoStore) AggregateByAgentName(ctx context.Context, peerFilter *model
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	query = append(query, bson.D{
@@ -235,12 +242,9 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context, peerFilter *m
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	query = append(query, bson.D{
@@ -301,12 +305,9 @@ func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context, peerFilter 
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	query = append(query, bson.D{
@@ -345,12 +346,9 @@ func (s *mongoStore) AggregateByCountry(ctx context.Context, peerFilter *model.P
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	query = append(query, bson.D{
@@ -393,12 +391,9 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context, peerFilter *mod
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	query = append(query, bson.D{
@@ -447,12 +442,9 @@ func (s *mongoStore) AggregateBySyncStatus(ctx context.Context, peerFilter *mode
 	}
 
 	var err error
-	if peerFilter != nil &&
-		peerFilter.ForkDigest != nil {
-		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
-		if err != nil {
-			return nil, err
-		}
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
 	}
 
 	total := bson.A{bson.D{{Key: "$count", Value: "count"}}}
