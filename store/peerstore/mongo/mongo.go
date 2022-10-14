@@ -6,7 +6,9 @@ package mongo
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"eth2-crawler/graph/model"
 	"eth2-crawler/store/peerstore"
 	"fmt"
 	"time"
@@ -90,10 +92,52 @@ func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, er
 	return res, nil
 }
 
+func AddForkDigestFilterToQueryPipeline(query mongo.Pipeline, peerFilter *model.PeerFilter) (mongo.Pipeline, error) {
+	forkDigest := *(peerFilter.ForkDigest)
+	if forkDigest[0:2] == "0x" {
+		forkDigest = forkDigest[2:]
+	}
+	forkDigestBytes, err := hex.DecodeString(forkDigest)
+	if err != nil {
+		return nil, err
+	}
+	query = append(query, bson.D{
+		{Key: "$match", Value: bson.D{{Key: "fork_digest", Value: forkDigestBytes}}},
+	})
+
+	return query, nil
+}
+
+func AddPeerFilterToQueryPipeline(query mongo.Pipeline, peerFilter *model.PeerFilter) (mongo.Pipeline, error) {
+	var err error
+	if peerFilter != nil &&
+		peerFilter.ForkDigest != nil {
+		query, err = AddForkDigestFilterToQueryPipeline(query, peerFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return query, nil
+}
+
 // Todo: accept filter and find options to get limited information
-func (s *mongoStore) ViewAll(ctx context.Context) ([]*models.Peer, error) {
+func (s *mongoStore) ViewAll(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.Peer, error) {
 	var peers []*models.Peer
-	cursor, err := s.coll.Find(ctx, bson.D{{Key: "is_connectable", Value: true}})
+
+	query := mongo.Pipeline{
+		bson.D{
+			{Key: "$match", Value: bson.D{{Key: "is_connectable", Value: true}}},
+		},
+	}
+
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -141,21 +185,27 @@ type aggregateData struct {
 	Count int    `json:"count" bson:"count"`
 }
 
-func (s *mongoStore) AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByAgentName(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
 			}},
 		},
-
-		bson.D{
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$user_agent.name"},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			}},
-		},
 	}
+
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	query = append(query, bson.D{
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$user_agent.name"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}},
+	})
 
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
@@ -182,23 +232,30 @@ type clientVersionAggregation struct {
 	Versions []*models.AggregateData `json:"versions" bson:"versions"`
 }
 
-func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.ClientVersionAggregation, error) {
+func (s *mongoStore) AggregateByClientVersion(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.ClientVersionAggregation, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
 			}},
 		},
+	}
 
-		bson.D{
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: bson.D{
-					{Key: "client", Value: "$user_agent.name"},
-					{Key: "version", Value: "$user_agent.version"},
-				}},
-				{Key: "versionCount", Value: bson.D{{Key: "$sum", Value: 1}}},
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	query = append(query, bson.D{
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: bson.D{
+				{Key: "client", Value: "$user_agent.name"},
+				{Key: "version", Value: "$user_agent.version"},
 			}},
-		},
+			{Key: "versionCount", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}},
+	},
 
 		bson.D{
 			{Key: "$group", Value: bson.D{
@@ -213,8 +270,7 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.Cl
 					{Key: "$sum", Value: "$versionCount"},
 				}},
 			}},
-		},
-	}
+		})
 
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
@@ -239,21 +295,28 @@ func (s *mongoStore) AggregateByClientVersion(ctx context.Context) ([]*models.Cl
 	return result, nil
 }
 
-func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
 			}},
 		},
-
-		bson.D{
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$user_agent.os"},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			}},
-		},
 	}
+
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	query = append(query, bson.D{
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$user_agent.os"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}},
+	})
+
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
@@ -273,21 +336,28 @@ func (s *mongoStore) AggregateByOperatingSystem(ctx context.Context) ([]*models.
 	return result, nil
 }
 
-func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByCountry(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
 			}},
 		},
-
-		bson.D{
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$geo_location.country"},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			}},
-		},
 	}
+
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	query = append(query, bson.D{
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$geo_location.country"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}},
+	})
+
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
@@ -307,7 +377,7 @@ func (s *mongoStore) AggregateByCountry(ctx context.Context) ([]*models.Aggregat
 	return result, nil
 }
 
-func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error) {
+func (s *mongoStore) AggregateByNetworkType(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			// avoid aggregation of entries without geolocation information
@@ -318,13 +388,21 @@ func (s *mongoStore) AggregateByNetworkType(ctx context.Context) ([]*models.Aggr
 				}},
 			}},
 		},
-		bson.D{
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: "$geo_location.asn.type"},
-				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-			}},
-		},
 	}
+
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	query = append(query, bson.D{
+		{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$geo_location.asn.type"},
+			{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
+		}},
+	})
+
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err
@@ -354,24 +432,29 @@ type aggregateSyncData struct {
 	Unsynced []count `json:"unsynced" bson:"unsynced"`
 }
 
-func (s *mongoStore) AggregateBySyncStatus(ctx context.Context) (*models.SyncAggregateData, error) {
-	total := bson.A{bson.D{{Key: "$count", Value: "count"}}}
-	synced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: true}}}}, bson.D{{Key: "$count", Value: "count"}}}
-	unsynced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: false}}}}, bson.D{{Key: "$count", Value: "count"}}}
-
-	facetStage := bson.D{{Key: "$facet", Value: bson.D{
-		{Key: "total", Value: total},
-		{Key: "synced", Value: synced},
-		{Key: "unsynced", Value: unsynced}}}}
-
+func (s *mongoStore) AggregateBySyncStatus(ctx context.Context, peerFilter *model.PeerFilter) (*models.SyncAggregateData, error) {
 	query := mongo.Pipeline{
 		bson.D{
 			{Key: "$match", Value: bson.D{
 				{Key: "is_connectable", Value: bson.D{{Key: "$eq", Value: true}}},
 			}},
 		},
-		facetStage,
 	}
+
+	var err error
+	query, err = AddPeerFilterToQueryPipeline(query, peerFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	total := bson.A{bson.D{{Key: "$count", Value: "count"}}}
+	synced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: true}}}}, bson.D{{Key: "$count", Value: "count"}}}
+	unsynced := bson.A{bson.D{{Key: "$match", Value: bson.D{{Key: "sync.status", Value: false}}}}, bson.D{{Key: "$count", Value: "count"}}}
+	query = append(query, bson.D{{Key: "$facet", Value: bson.D{
+		{Key: "total", Value: total},
+		{Key: "synced", Value: synced},
+		{Key: "unsynced", Value: unsynced}}}})
+
 	cursor, err := s.coll.Aggregate(ctx, query)
 	if err != nil {
 		return nil, err

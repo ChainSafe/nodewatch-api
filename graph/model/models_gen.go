@@ -42,6 +42,10 @@ type NodeStatsOverTime struct {
 	UnsyncedNodes int     `json:"unsyncedNodes"`
 }
 
+type PeerFilter struct {
+	ForkDigest *string `json:"forkDigest"`
+}
+
 type RegionalStats struct {
 	TotalParticipatingCountries int     `json:"totalParticipatingCountries"`
 	HostedNodePercentage        float64 `json:"hostedNodePercentage"`

@@ -6,6 +6,8 @@ package mongo
 
 import (
 	"context"
+	"encoding/hex"
+	"eth2-crawler/graph/model"
 	"eth2-crawler/models"
 	"eth2-crawler/store/record"
 	"eth2-crawler/utils/config"
@@ -13,6 +15,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -63,11 +66,43 @@ func (s mongoStore) Create(ctx context.Context, history *models.History) error {
 	return err
 }
 
-func (s mongoStore) GetHistory(ctx context.Context, start int64, end int64) ([]*models.HistoryCount, error) {
-	filter := bson.D{{Key: "$and", Value: bson.A{
-		bson.D{{Key: "time", Value: bson.D{{Key: "$gt", Value: start}}}},
-		bson.D{{Key: "time", Value: bson.D{{Key: "$lt", Value: end}}}},
-	}}}
+func (s mongoStore) GetHistory(ctx context.Context, start int64, end int64, peerFilter *model.PeerFilter) ([]*models.HistoryCount, error) {
+	var filter primitive.D
+	if peerFilter != nil &&
+		peerFilter.ForkDigest != nil {
+		forkDigest := *(peerFilter.ForkDigest)
+		if forkDigest[0:2] == "0x" {
+			forkDigest = forkDigest[2:]
+		}
+		forkDigestBytes, err := hex.DecodeString(forkDigest)
+		if err != nil {
+			return nil, err
+		}
+		filter = bson.D{
+			{
+				Key: "$match", Value: bson.D{{Key: "fork_digest", Value: forkDigestBytes}},
+			},
+			{
+				Key: "$and", Value: bson.A{
+					bson.D{{Key: "time", Value: bson.D{{Key: "$gt", Value: start}}}},
+					bson.D{{Key: "time", Value: bson.D{{Key: "$lt", Value: end}}}},
+				},
+			},
+		}
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		filter = bson.D{
+			{
+				Key: "$and", Value: bson.A{
+					bson.D{{Key: "time", Value: bson.D{{Key: "$gt", Value: start}}}},
+					bson.D{{Key: "time", Value: bson.D{{Key: "$lt", Value: end}}}},
+				},
+			},
+		}
+	}
+
 	cursor, err := s.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err

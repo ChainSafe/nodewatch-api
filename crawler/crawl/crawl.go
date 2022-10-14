@@ -9,6 +9,7 @@ import (
 	"eth2-crawler/crawler/p2p"
 	reqresp "eth2-crawler/crawler/rpc/request"
 	"eth2-crawler/crawler/util"
+	"eth2-crawler/graph/model"
 	"eth2-crawler/models"
 	ipResolver "eth2-crawler/resolver"
 	"eth2-crawler/store/peerstore"
@@ -248,7 +249,7 @@ func (c *crawler) updateGeolocation(ctx context.Context, peer *models.Peer) {
 func (c *crawler) insertToHistory() {
 	ctx := context.Background()
 	// get count
-	aggregateData, err := c.peerStore.AggregateBySyncStatus(ctx)
+	aggregateData, err := c.peerStore.AggregateBySyncStatus(ctx, &model.PeerFilter{})
 	if err != nil {
 		log.Error("error getting sync status", log.Ctx{"err": err})
 	}
