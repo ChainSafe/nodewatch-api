@@ -4,9 +4,8 @@
 name: Deploy ECS Prod
 
 on:
-  push:
-    tags:
-      - v1.*
+  release:
+    types: [published]
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
