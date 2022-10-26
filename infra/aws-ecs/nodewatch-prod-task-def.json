@@ -1,0 +1,102 @@
+{
+    "taskDefinitionArn": "arn:aws:ecs:us-east-2:381177214925:task-definition/nodewatch-prod-task:4",
+    "containerDefinitions": [
+        {
+            "name": "nodewatch-prod-container",
+            "image": "381177214925.dkr.ecr.us-east-2.amazonaws.com/nodewatch-prod-ecr:v1.3.1",
+            "cpu": 256,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "env",
+                    "value": "prod"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "MONGODB_URI",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-2:381177214925:secret:nodewatch-prod-8FCCGw:MONGODB_URI::"
+                },
+                {
+                    "name": "RESOLVER_API_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:us-east-2:381177214925:secret:nodewatch-prod-8FCCGw:RESOLVER_API_KEY::"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "nodewatch-prod-logs",
+                    "awslogs-region": "us-east-2",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            }
+        }
+    ],
+    "family": "nodewatch-prod-task",
+    "executionRoleArn": "arn:aws:iam::381177214925:role/nodewatch-prod-role",
+    "networkMode": "awsvpc",
+    "revision": 4,
+    "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "ecs.capability.secrets.asm.environment-variables"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "FARGATE"
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "registeredAt": "2022-04-27T15:23:12.288Z",
+    "registeredBy": "arn:aws:sts::381177214925:assumed-role/AWSReservedSSO_AWSAdministratorAccess_8acb862b989cc854/faith@chainsafe.io",
+    "tags": [
+        {
+            "key": "Terraform",
+            "value": "true"
+        },
+        {
+            "key": "Env",
+            "value": "PROD"
+        },
+        {
+            "key": "Project",
+            "value": "Nodewatch"
+        }
+    ]
+}
