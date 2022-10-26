@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/ChainSafe/nodewatch-api/compare/v1.3.1...v1.4.0) (2022-10-26)
+
+
+### Features
+
+* ECS task deployment config file added ([#217](https://github.com/ChainSafe/nodewatch-api/issues/217)) ([bf3c570](https://github.com/ChainSafe/nodewatch-api/commit/bf3c57036ca29fdb4ce360b8616ed3345829227f))
+
 ### [1.3.1](https://www.github.com/ChainSafe/eth2-crawler/compare/v1.3.0...v1.3.1) (2021-10-23)
 
 
