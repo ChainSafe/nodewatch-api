@@ -35,7 +35,7 @@ jobs:
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ecs/task_definition_${{ env.ENVIRONMENT }}.json
+          task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
           service: nodewatch-${{ env.ENVIRONMENT }}-service
           cluster: nodewatch-${{ env.ENVIRONMENT }}-cluster
           wait-for-service-stability: true
