@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.3](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.2...v1.4.3) (2022-10-26)
+
+
+### Bug Fixes
+
+* update peer with latest data ([#202](https://github.com/ChainSafe/nodewatch-api/issues/202)) ([135548c](https://github.com/ChainSafe/nodewatch-api/commit/135548c21895f37d1b208fe50ad64b911a3102f9))
+
 ### [1.4.2](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.1...v1.4.2) (2022-10-26)
 
 
