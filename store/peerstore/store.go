@@ -8,6 +8,7 @@ import (
 	"context"
 	"time"
 
+	"eth2-crawler/graph/model"
 	"eth2-crawler/models"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -21,12 +22,12 @@ type Provider interface {
 	View(ctx context.Context, peerID peer.ID) (*models.Peer, error)
 	Delete(ctx context.Context, peer *models.Peer) error
 	// Todo: accept filter and find options to get limited information
-	ViewAll(ctx context.Context) ([]*models.Peer, error)
+	ViewAll(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.Peer, error)
 	ListForJob(ctx context.Context, lastUpdated time.Duration, limit int) ([]*models.Peer, error)
-	AggregateByAgentName(ctx context.Context) ([]*models.AggregateData, error)
-	AggregateByOperatingSystem(ctx context.Context) ([]*models.AggregateData, error)
-	AggregateByCountry(ctx context.Context) ([]*models.AggregateData, error)
-	AggregateByNetworkType(ctx context.Context) ([]*models.AggregateData, error)
-	AggregateBySyncStatus(ctx context.Context) (*models.SyncAggregateData, error)
-	AggregateByClientVersion(ctx context.Context) ([]*models.ClientVersionAggregation, error)
+	AggregateByAgentName(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error)
+	AggregateByOperatingSystem(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error)
+	AggregateByCountry(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error)
+	AggregateByNetworkType(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.AggregateData, error)
+	AggregateBySyncStatus(ctx context.Context, peerFilter *model.PeerFilter) (*models.SyncAggregateData, error)
+	AggregateByClientVersion(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.ClientVersionAggregation, error)
 }

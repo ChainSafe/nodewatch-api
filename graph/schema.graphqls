@@ -44,16 +44,20 @@ type HeatmapData {
   country:     String!
 }
 
+input PeerFilter {
+  forkDigest: String
+}
+
 type Query {
-  aggregateByAgentName: [AggregateData!]!
-  aggregateByCountry: [AggregateData!]!
-  aggregateByOperatingSystem: [AggregateData!]!
-  aggregateByNetwork: [AggregateData!]!
-  aggregateByHardforkSchedule: [NextHardforkAggregation!]!
-  aggregateByClientVersion: [ClientVersionAggregation!]!
-  getHeatmapData: [HeatmapData!]!
-  getNodeStats: NodeStats!
-  getNodeStatsOverTime(start: Float!, end: Float!): [NodeStatsOverTime!]!
-  getRegionalStats: RegionalStats!
-  getAltairUpgradePercentage: Float!
+  aggregateByAgentName(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByCountry(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByOperatingSystem(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByNetwork(peerFilter: PeerFilter): [AggregateData!]!
+  aggregateByHardforkSchedule(peerFilter: PeerFilter): [NextHardforkAggregation!]!
+  aggregateByClientVersion(peerFilter: PeerFilter): [ClientVersionAggregation!]!
+  getHeatmapData(peerFilter: PeerFilter): [HeatmapData!]!
+  getNodeStats(peerFilter: PeerFilter): NodeStats!
+  getNodeStatsOverTime(start: Float!, end: Float!, peerFilter: PeerFilter): [NodeStatsOverTime!]!
+  getRegionalStats(peerFilter: PeerFilter): RegionalStats!
+  getAltairUpgradePercentage(peerFilter: PeerFilter): Float!
 }
