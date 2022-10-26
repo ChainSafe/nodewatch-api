@@ -6,7 +6,7 @@ name: Build & Push Docker Image to AWS ECR
 on:
   push:
     tags:
-      - v*
+      - v1.*
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
