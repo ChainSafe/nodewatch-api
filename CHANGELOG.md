@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.2](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.1...v1.4.2) (2022-10-26)
+
+
+### Bug Fixes
+
+* gh action ([#221](https://github.com/ChainSafe/nodewatch-api/issues/221)) ([e71105e](https://github.com/ChainSafe/nodewatch-api/commit/e71105e292c7a479b257b9417c8eab5c237e2753))
+
 ### [1.4.1](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.0...v1.4.1) (2022-10-26)
 
 
