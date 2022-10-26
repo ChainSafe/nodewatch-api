@@ -51,7 +51,8 @@ func (s *mongoStore) Create(ctx context.Context, peer *models.Peer) error {
 		}
 		return err
 	}
-	return nil
+	// if found update the peer with the latest data
+	return s.Update(ctx, peer)
 }
 
 func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
