@@ -35,7 +35,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
-
+          region: ${{ env.AWS_REGION }}
+          
       # gather metadata from git & github actions to reference in docker
       - name: git & github metadata
         id: metadata
