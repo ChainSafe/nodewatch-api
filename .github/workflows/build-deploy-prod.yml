@@ -1,15 +1,16 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
 
-name: Build & Push Docker Image to AWS ECR
+name: Build & Deploy to AWS
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - 'fix/ci'
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
@@ -17,7 +18,7 @@ env:
   
 jobs:
   build:
-    name: build_prod
+    name: build_deploy_prod
     runs-on: ubuntu-latest
 
     steps:
