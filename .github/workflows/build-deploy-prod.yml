@@ -20,7 +20,10 @@ jobs:
   build:
     name: build_deploy_prod
     runs-on: ubuntu-latest
-
+    permissions:
+          id-token: write
+          contents: write
+          
     steps:
       # download the source code into the runner
       - name: checkout
@@ -67,3 +70,4 @@ jobs:
           service: nodewatch-${{ env.ENVIRONMENT }}-service
           cluster: nodewatch-${{ env.ENVIRONMENT }}-cluster
           wait-for-service-stability: true
+          
