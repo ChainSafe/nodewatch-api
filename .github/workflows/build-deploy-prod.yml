@@ -13,7 +13,8 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
-
+  ENVIRONMENT: PROD
+  
 jobs:
   build:
     name: build_prod
@@ -49,3 +50,12 @@ jobs:
           tags: |
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}:latest
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}:${{ steps.vars.outputs.sha }}
+      
+      # deploy to AWS ECS
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
+          service: nodewatch-${{ env.ENVIRONMENT }}-service
+          cluster: nodewatch-${{ env.ENVIRONMENT }}-cluster
+          wait-for-service-stability: true
