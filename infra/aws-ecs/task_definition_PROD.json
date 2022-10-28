@@ -3,7 +3,7 @@
     "containerDefinitions": [
         {
             "name": "nodewatch-prod-container",
-            "image": "381177214925.dkr.ecr.us-east-2.amazonaws.com/nodewatch-prod-ecr:v1.3.1",
+            "image": "381177214925.dkr.ecr.us-east-2.amazonaws.com/nodewatch-prod-ecr",
             "cpu": 256,
             "portMappings": [
                 {
