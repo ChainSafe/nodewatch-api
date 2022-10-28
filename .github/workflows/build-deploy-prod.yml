@@ -14,8 +14,8 @@ env:
   # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
-  ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER}}
-  ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE}}
+  ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER }}
+  ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE }}
   ENVIRONMENT: PROD
   
 jobs:
