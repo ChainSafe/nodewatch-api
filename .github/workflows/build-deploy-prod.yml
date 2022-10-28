@@ -69,6 +69,6 @@ jobs:
         with:
           task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
           service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECR_CLUSTER }}
+          cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
           
