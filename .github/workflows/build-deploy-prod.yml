@@ -14,6 +14,8 @@ env:
   # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
+  ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER}}
+  ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE}}
   ENVIRONMENT: PROD
   
 jobs:
@@ -66,7 +68,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
-          service: nodewatch-${{ env.ENVIRONMENT }}-service
-          cluster: nodewatch-${{ env.ENVIRONMENT }}-cluster
+          service: ${{ env.ECS_CLUSTER }}
+          cluster: ${{ env.ECR_SERVICE }}
           wait-for-service-stability: true
           
