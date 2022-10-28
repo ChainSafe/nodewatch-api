@@ -6,13 +6,13 @@ name: Build & Deploy PROD
 on:
   push:
     branches:
-      - 'fix/ci'
+      - fix/ci
+  # release:
+  #   types: [published]
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
   ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER }}
   ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE }}
@@ -30,45 +30,56 @@ jobs:
       # download the source code into the runner
       - name: checkout
         uses: actions/checkout@v2
-
-      - name: short sha
-        id: vars
-        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
-          aws-region: ${{ env.AWS_REGION }}
-
-      # gather metadata from git & github actions to reference in docker
-      - name: git & github metadata
-        id: metadata
-        uses: docker/metadata-action@v3
-        with:
-          images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
-
-      # login in docker repository
-      - name: docker login
-        uses: aws-actions/amazon-ecr-login@v1
-
-      # build a docker image
-      - name: docker & push image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.sha }}
       
-      # deploy to AWS ECS
-      - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Check output
+        env:
+          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+        run: |
+          echo $RELEASE_VERSION
+          echo ${{ steps.vars.outputs.tag }}
+
+      # - name: short sha
+      #   id: vars
+      #   run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
+      #     aws-region: ${{ env.AWS_REGION }}
+
+      # # gather metadata from git & github actions to reference in docker
+      # - name: git & github metadata
+      #   id: metadata
+      #   uses: docker/metadata-action@v3
+      #   with:
+      #     images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
+
+      # # login in docker repository
+      # - name: docker login
+      #   uses: aws-actions/amazon-ecr-login@v1
+
+      # # build a docker image
+      # - name: docker & push image
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: true
+      #     tags: |
+      #       ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
+      #       ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.sha }}
+      
+      # # deploy to AWS ECS
+      # - name: Deploy to Amazon ECS
+      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      #   with:
+      #     task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
+      #     service: ${{ env.ECS_SERVICE }}
+      #     cluster: ${{ env.ECS_CLUSTER }}
+      #     wait-for-service-stability: true
           
