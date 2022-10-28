@@ -23,7 +23,7 @@ jobs:
     permissions:
           id-token: write
           contents: write
-          
+
     steps:
       # download the source code into the runner
       - name: checkout
@@ -32,7 +32,6 @@ jobs:
       - name: short sha
         id: vars
         run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
-
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -59,8 +58,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}:latest
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}:${{ steps.vars.outputs.sha }}
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.sha }}
       
       # deploy to AWS ECS
       - name: Deploy to Amazon ECS
