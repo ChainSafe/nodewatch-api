@@ -5,10 +5,9 @@ name: Build & Deploy PROD
 
 on:
   push:
-    branches:
-      - fix/ci
-  # release:
-  #   types: [published]
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -31,51 +30,44 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       
-      - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: Test
-        run: |
-          echo $RELEASE_VERSION
-          echo ${{ env.RELEASE_VERSION }}
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
-      # - name: short sha
-      #   id: vars
-      #   run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
-      #     aws-region: ${{ env.AWS_REGION }}
+      # gather metadata from git & github actions to reference in docker
+      - name: git & github metadata
+        id: metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
 
-      # # gather metadata from git & github actions to reference in docker
-      # - name: git & github metadata
-      #   id: metadata
-      #   uses: docker/metadata-action@v3
-      #   with:
-      #     images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
+      # login in docker repository
+      - name: docker login
+        uses: aws-actions/amazon-ecr-login@v1
 
-      # # login in docker repository
-      # - name: docker login
-      #   uses: aws-actions/amazon-ecr-login@v1
-
-      # # build a docker image
-      # - name: docker & push image
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: .
-      #     file: ./Dockerfile
-      #     push: true
-      #     tags: |
-      #       ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
-      #       ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.sha }}
-      
-      # # deploy to AWS ECS
-      # - name: Deploy to Amazon ECS
-      #   uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-      #   with:
-      #     task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
-      #     service: ${{ env.ECS_SERVICE }}
-      #     cluster: ${{ env.ECS_CLUSTER }}
-      #     wait-for-service-stability: true
+      # build a docker image
+      - name: docker & push image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.tag }}
+        
+      # deploy to AWS ECS
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
           
