@@ -1,5 +1,15 @@
 # Changelog
 
+### [1.4.4](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.3...v1.4.4) (2022-10-31)
+
+
+### Bug Fixes
+
+* ci pipeline ([#228](https://github.com/ChainSafe/nodewatch-api/issues/228)) ([9216648](https://github.com/ChainSafe/nodewatch-api/commit/9216648296620e7187300a03b5b043fb94c55d0f))
+* crawler update ([#230](https://github.com/ChainSafe/nodewatch-api/issues/230)) ([d253c50](https://github.com/ChainSafe/nodewatch-api/commit/d253c5063f91c678bfef9c48235acea5f5a16ad0))
+* prod deployment ([#225](https://github.com/ChainSafe/nodewatch-api/issues/225)) ([ec7154d](https://github.com/ChainSafe/nodewatch-api/commit/ec7154d7b1de72357865794c8a0b7a80d1584905))
+* syntext fixed ([#227](https://github.com/ChainSafe/nodewatch-api/issues/227)) ([d0a1880](https://github.com/ChainSafe/nodewatch-api/commit/d0a1880ef126a5df97060c87f167a12c0b39e028))
+
 ### [1.4.3](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.2...v1.4.3) (2022-10-26)
 
 
