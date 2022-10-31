@@ -34,6 +34,7 @@ const (
 	LodestarClient   ClientName = "lodestar"
 	NimbusClient     ClientName = "nimbus"
 	TrinityClient    ClientName = "trinity"
+	GrandineClient   ClientName = "grandine"
 	OthersClient     ClientName = "others"
 )
 
@@ -49,6 +50,7 @@ func init() {
 		LodestarClient:   {"lodestar", "js-libp2p"},
 		NimbusClient:     {"nimbus"},
 		TrinityClient:    {"trinity"},
+		GrandineClient:   {"grandine", "rust"},
 	}
 }
 
@@ -128,7 +130,7 @@ func (s *Sync) String() string {
 	return StatusUnsynced
 }
 
-// Peer holds all information of a eth2 peer
+// Peer holds all information of an eth2 peer
 type Peer struct {
 	ID     peer.ID `json:"id" bson:"_id"`
 	NodeID string  `json:"node_id" bson:"node_id"`
@@ -142,6 +144,7 @@ type Peer struct {
 	Attnets common.AttnetBits `json:"enr_attnets,omitempty" bson:"attnets"`
 
 	ForkDigest      common.ForkDigest `json:"fork_digest" bson:"fork_digest"`
+	ForkDigestStr   string            `json:"fork_digest_str" bson:"fork_digest_str"`
 	NextForkEpoch   Epoch             `json:"next_fork_epoch" bson:"next_fork_epoch"`
 	NextForkVersion common.Version    `json:"next_fork_version" bson:"next_fork_version"`
 
@@ -188,6 +191,7 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		UDPPort:         node.UDP(),
 		Addrs:           addrStr,
 		ForkDigest:      eth2Data.ForkDigest,
+		ForkDigestStr:   eth2Data.ForkDigest.String(),
 		NextForkVersion: eth2Data.NextForkVersion,
 		NextForkEpoch:   Epoch(eth2Data.NextForkEpoch),
 		Attnets:         attnetsVal,
