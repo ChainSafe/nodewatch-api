@@ -126,7 +126,7 @@ func (c *crawler) updatePeer(ctx context.Context) {
 
 func (c *crawler) selectPendingAndExecute(ctx context.Context) {
 	// get peers that was updated 24 hours ago
-	reqs, err := c.peerStore.ListForJob(ctx, time.Hour*1, c.jobsConcurrency)
+	reqs, err := c.peerStore.ListForJob(ctx, time.Hour*24, c.jobsConcurrency)
 	if err != nil {
 		log.Error("error getting list from peerstore", log.Ctx{"err": err})
 		return
