@@ -132,10 +132,10 @@ func (s *Sync) String() string {
 
 // Peer holds all information of an eth2 peer
 type Peer struct {
-	ID     string `json:"id" bson:"_id"`
-	NodeID string `json:"node_id" bson:"node_id"`
-	Pubkey string `json:"pubkey" bson:"pubkey"`
-	ENR    string `json:"enr" bson:"enr"`
+	ID     peer.ID `json:"id" bson:"_id"`
+	NodeID string  `json:"node_id" bson:"node_id"`
+	Pubkey string  `json:"pubkey" bson:"pubkey"`
+	ENR    string  `json:"enr" bson:"enr"`
 
 	IP      string   `json:"ip" bson:"ip"`
 	TCPPort int      `json:"tcp_port" bson:"tcp_port"`
@@ -184,7 +184,7 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		attnetsVal = *attnets
 	}
 	return &Peer{
-		ID:              addr.ID.String(),
+		ID:              addr.ID,
 		NodeID:          node.ID().String(),
 		Pubkey:          hex.EncodeToString(pkByte),
 		IP:              node.IP().String(),
@@ -192,6 +192,7 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		UDPPort:         node.UDP(),
 		Addrs:           addrStr,
 		ForkDigest:      eth2Data.ForkDigest,
+		ForkDigestStr:   eth2Data.ForkDigest.String(),
 		NextForkVersion: eth2Data.NextForkVersion,
 		NextForkEpoch:   Epoch(eth2Data.NextForkEpoch),
 		Attnets:         attnetsVal,
@@ -304,9 +305,8 @@ func (p *Peer) GetPeerInfo() *peer.AddrInfo {
 		madd, _ := ma.NewMultiaddr(v)
 		maddrs = append(maddrs, madd)
 	}
-	id, _ := peer.IDFromString(p.ID)
 	return &peer.AddrInfo{
-		ID:    id,
+		ID:    p.ID,
 		Addrs: maddrs,
 	}
 }
