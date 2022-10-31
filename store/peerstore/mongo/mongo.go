@@ -17,7 +17,6 @@ import (
 
 	"eth2-crawler/utils/config"
 
-	"github.com/libp2p/go-libp2p-core/peer"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -28,18 +27,6 @@ type mongoStore struct {
 	client  *mongo.Client
 	coll    *mongo.Collection
 	timeout time.Duration
-}
-
-func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
-	_, err := s.View(ctx, peer.ID)
-	if err != nil {
-		if errors.Is(err, peerstore.ErrPeerNotFound) {
-			return s.Create(ctx, peer)
-		}
-		return err
-	}
-
-	return s.Update(ctx, peer)
 }
 
 func (s *mongoStore) Create(ctx context.Context, peer *models.Peer) error {
@@ -58,7 +45,7 @@ func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
 	filter := bson.D{
 		{Key: "_id", Value: peer.ID},
 	}
-	_, err := s.coll.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: peer}})
+	_, err := s.coll.ReplaceOne(ctx, filter, peer)
 	if err != nil {
 		return err
 	}
@@ -76,7 +63,7 @@ func (s *mongoStore) Delete(ctx context.Context, peer *models.Peer) error {
 	return nil
 }
 
-func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, error) {
+func (s *mongoStore) View(ctx context.Context, peerID string) (*models.Peer, error) {
 	filter := bson.D{
 		{Key: "_id", Value: peerID},
 	}

@@ -208,14 +208,14 @@ func (c *crawler) collectNodeInfoRetryer(ctx context.Context, peer *models.Peer)
 		if err != nil || status == nil {
 			continue
 		}
-		ag, err = c.host.GetAgentVersion(peer.ID)
+		ag, err = c.host.GetAgentVersion(peer.PeerID())
 		if err != nil {
 			continue
 		} else {
 			peer.SetUserAgent(ag)
 		}
 
-		pv, err = c.host.GetProtocolVersion(peer.ID)
+		pv, err = c.host.GetProtocolVersion(peer.PeerID())
 		if err != nil {
 			continue
 		} else {
