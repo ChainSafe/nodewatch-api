@@ -131,18 +131,16 @@ func (c *crawler) selectPendingAndExecute(ctx context.Context) {
 		log.Error("error getting list from peerstore", log.Ctx{"err": err})
 		return
 	}
-	// update the pr, so it won't be picked again in 24 hours
-	// We have to update the LastUpdated field here and cannot rety on the worker to update it
-	// That is because the same request will be picked again when it is in worker.
-	for i, req := range reqs {
+	for _, req := range reqs {
+		// update the pr, so it won't be picked again in 24 hours
+		// We have to update the LastUpdated field here and cannot rety on the worker to update it
+		// That is because the same request will be picked again when it is in worker.
 		req.LastUpdated = time.Now().Unix()
 		err = c.peerStore.Update(ctx, req)
 		if err != nil {
-			reqs = append(reqs[:i], reqs[i+1:]...)
 			log.Error("error updating request", log.Ctx{"err": err})
+			continue
 		}
-	}
-	for _, req := range reqs {
 		select {
 		case <-ctx.Done():
 			log.Error("update selector stopped", log.Ctx{"err": ctx.Err()})
