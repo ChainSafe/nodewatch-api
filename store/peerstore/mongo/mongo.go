@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"time"
 
 	"eth2-crawler/graph/model"
@@ -17,6 +16,7 @@ import (
 	"eth2-crawler/store/peerstore"
 	"eth2-crawler/utils/config"
 
+	"github.com/libp2p/go-libp2p-core/peer"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
