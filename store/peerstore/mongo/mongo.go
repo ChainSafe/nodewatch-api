@@ -8,13 +8,13 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"eth2-crawler/graph/model"
-	"eth2-crawler/store/peerstore"
 	"fmt"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"time"
 
+	"eth2-crawler/graph/model"
 	"eth2-crawler/models"
-
+	"eth2-crawler/store/peerstore"
 	"eth2-crawler/utils/config"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -63,7 +63,7 @@ func (s *mongoStore) Delete(ctx context.Context, peer *models.Peer) error {
 	return nil
 }
 
-func (s *mongoStore) View(ctx context.Context, peerID string) (*models.Peer, error) {
+func (s *mongoStore) View(ctx context.Context, peerID peer.ID) (*models.Peer, error) {
 	filter := bson.D{
 		{Key: "_id", Value: peerID},
 	}

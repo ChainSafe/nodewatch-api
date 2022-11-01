@@ -50,7 +50,7 @@ func init() {
 		LodestarClient:   {"lodestar", "js-libp2p"},
 		NimbusClient:     {"nimbus"},
 		TrinityClient:    {"trinity"},
-		GrandineClient:   {"grandine", "rust"},
+		GrandineClient:   {"grandine", "rust-libp2p"},
 	}
 }
 
@@ -132,9 +132,9 @@ func (s *Sync) String() string {
 
 // Peer holds all information of an eth2 peer
 type Peer struct {
-	ID     string `json:"id" bson:"_id"`
-	NodeID string `json:"node_id" bson:"node_id"`
-	Pubkey string `json:"pubkey" bson:"pubkey"`
+	ID     peer.ID `json:"id" bson:"_id"`
+	NodeID string  `json:"node_id" bson:"node_id"`
+	Pubkey string  `json:"pubkey" bson:"pubkey"`
 
 	IP      string   `json:"ip" bson:"ip"`
 	TCPPort int      `json:"tcp_port" bson:"tcp_port"`
@@ -183,7 +183,7 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		attnetsVal = *attnets
 	}
 	return &Peer{
-		ID:              addr.ID.String(),
+		ID:              addr.ID,
 		NodeID:          node.ID().String(),
 		Pubkey:          hex.EncodeToString(pkByte),
 		IP:              node.IP().String(),
@@ -197,11 +197,6 @@ func NewPeer(node *enode.Node, eth2Data *common.Eth2Data) (*Peer, error) {
 		Attnets:         attnetsVal,
 		Score:           ScoreGood,
 	}, nil
-}
-
-func (p *Peer) PeerID() peer.ID {
-	peerID, _ := peer.Decode(p.ID)
-	return peerID
 }
 
 // SetProtocolVersion sets peer's protocol version
@@ -309,10 +304,8 @@ func (p *Peer) GetPeerInfo() *peer.AddrInfo {
 		madd, _ := ma.NewMultiaddr(v)
 		maddrs = append(maddrs, madd)
 	}
-	peerID, _ := peer.Decode(p.ID)
-
 	return &peer.AddrInfo{
-		ID:    peerID,
+		ID:    p.ID,
 		Addrs: maddrs,
 	}
 }

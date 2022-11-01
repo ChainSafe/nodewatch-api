@@ -131,6 +131,17 @@ func (c *crawler) selectPendingAndExecute(ctx context.Context) {
 		log.Error("error getting list from peerstore", log.Ctx{"err": err})
 		return
 	}
+	// update the pr, so it won't be picked again in 24 hours
+	// We have to update the LastUpdated field here and cannot rety on the worker to update it
+	// That is because the same request will be picked again when it is in worker.
+	for i, req := range reqs {
+		req.LastUpdated = time.Now().Unix()
+		err = c.peerStore.Update(ctx, req)
+		if err != nil {
+			reqs = append(reqs[:i], reqs[i+1:]...)
+			log.Error("error updating request", log.Ctx{"err": err})
+		}
+	}
 	for _, req := range reqs {
 		select {
 		case <-ctx.Done():
@@ -183,7 +194,6 @@ func (c *crawler) updatePeerInfo(ctx context.Context, peer *models.Peer) {
 		}
 		return
 	}
-	peer.LastUpdated = time.Now().Unix()
 	err := c.peerStore.Update(ctx, peer)
 	if err != nil {
 		log.Error("failed on updating peerstore", log.Ctx{"err": err})
@@ -208,14 +218,14 @@ func (c *crawler) collectNodeInfoRetryer(ctx context.Context, peer *models.Peer)
 		if err != nil || status == nil {
 			continue
 		}
-		ag, err = c.host.GetAgentVersion(peer.PeerID())
+		ag, err = c.host.GetAgentVersion(peer.ID)
 		if err != nil {
 			continue
 		} else {
 			peer.SetUserAgent(ag)
 		}
 
-		pv, err = c.host.GetProtocolVersion(peer.PeerID())
+		pv, err = c.host.GetProtocolVersion(peer.ID)
 		if err != nil {
 			continue
 		} else {

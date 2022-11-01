@@ -118,7 +118,7 @@ func (c *Client) FetchStatus(sFn reqresp.NewStreamFn, ctx context.Context, peer 
 	}
 	resCode := reqresp.ServerErrCode // error by default
 	var data *beacon.Status
-	err := methods.StatusRPCv1.RunRequest(ctx, sFn, peer.PeerID(), comp,
+	err := methods.StatusRPCv1.RunRequest(ctx, sFn, peer.ID, comp,
 		reqresp.RequestSSZInput{Obj: status}, 1,
 		func() error {
 			return nil

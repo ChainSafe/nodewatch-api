@@ -6,6 +6,7 @@ package peerstore
 
 import (
 	"context"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"time"
 
 	"eth2-crawler/graph/model"
@@ -16,7 +17,7 @@ import (
 type Provider interface {
 	Create(ctx context.Context, peer *models.Peer) error
 	Update(ctx context.Context, peer *models.Peer) error
-	View(ctx context.Context, peerID string) (*models.Peer, error)
+	View(ctx context.Context, peerID peer.ID) (*models.Peer, error)
 	Delete(ctx context.Context, peer *models.Peer) error
 	// Todo: accept filter and find options to get limited information
 	ViewAll(ctx context.Context, peerFilter *model.PeerFilter) ([]*models.Peer, error)
