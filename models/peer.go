@@ -50,7 +50,7 @@ func init() {
 		LodestarClient:   {"lodestar", "js-libp2p"},
 		NimbusClient:     {"nimbus"},
 		TrinityClient:    {"trinity"},
-		GrandineClient:   {"grandine", "rust"},
+		GrandineClient:   {"grandine", "rust-libp2p"},
 	}
 }
 

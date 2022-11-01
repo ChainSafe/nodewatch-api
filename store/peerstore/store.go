@@ -18,7 +18,6 @@ import (
 type Provider interface {
 	Create(ctx context.Context, peer *models.Peer) error
 	Update(ctx context.Context, peer *models.Peer) error
-	Upsert(ctx context.Context, peer *models.Peer) error
 	View(ctx context.Context, peerID peer.ID) (*models.Peer, error)
 	Delete(ctx context.Context, peer *models.Peer) error
 	// Todo: accept filter and find options to get limited information

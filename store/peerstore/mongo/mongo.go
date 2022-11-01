@@ -8,13 +8,12 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"eth2-crawler/graph/model"
-	"eth2-crawler/store/peerstore"
 	"fmt"
 	"time"
 
+	"eth2-crawler/graph/model"
 	"eth2-crawler/models"
-
+	"eth2-crawler/store/peerstore"
 	"eth2-crawler/utils/config"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -28,18 +27,6 @@ type mongoStore struct {
 	client  *mongo.Client
 	coll    *mongo.Collection
 	timeout time.Duration
-}
-
-func (s *mongoStore) Upsert(ctx context.Context, peer *models.Peer) error {
-	_, err := s.View(ctx, peer.ID)
-	if err != nil {
-		if errors.Is(err, peerstore.ErrPeerNotFound) {
-			return s.Create(ctx, peer)
-		}
-		return err
-	}
-
-	return s.Update(ctx, peer)
 }
 
 func (s *mongoStore) Create(ctx context.Context, peer *models.Peer) error {
@@ -58,7 +45,7 @@ func (s *mongoStore) Update(ctx context.Context, peer *models.Peer) error {
 	filter := bson.D{
 		{Key: "_id", Value: peer.ID},
 	}
-	_, err := s.coll.UpdateOne(ctx, filter, bson.D{{Key: "$set", Value: peer}})
+	_, err := s.coll.ReplaceOne(ctx, filter, peer)
 	if err != nil {
 		return err
 	}
