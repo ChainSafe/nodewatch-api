@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.5](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.4...v1.4.5) (2022-11-01)
+
+
+### Bug Fixes
+
+* scale ecs cpu & ram ([#234](https://github.com/ChainSafe/nodewatch-api/issues/234)) ([a526299](https://github.com/ChainSafe/nodewatch-api/commit/a5262992fe0408be3cece09983c544ba412a3388))
+
 ### [1.4.4](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.3...v1.4.4) (2022-10-31)
 
 
