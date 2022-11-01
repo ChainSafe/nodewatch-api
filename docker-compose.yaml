@@ -31,7 +31,7 @@ services:
     restart: on-failure
 
   crawler:
-    image: "381177214925.dkr.ecr.us-east-2.amazonaws.com/nodewatch-prod-ecr:latest"
+    image: "crawler-dev:latest"
     build:
       context: .
       dockerfile: Dockerfile

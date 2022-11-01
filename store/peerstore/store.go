@@ -6,11 +6,12 @@ package peerstore
 
 import (
 	"context"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"time"
 
 	"eth2-crawler/graph/model"
 	"eth2-crawler/models"
+
+	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 // Provider represents store provider interface that can be implemented by different DB engines
