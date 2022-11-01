@@ -81,8 +81,8 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "cpu": "256",
-    "memory": "512",
+    "cpu": "1024",
+    "memory": "2024",
     "registeredAt": "2022-04-27T15:23:12.288Z",
     "registeredBy": "arn:aws:sts::381177214925:assumed-role/AWSReservedSSO_AWSAdministratorAccess_8acb862b989cc854/faith@chainsafe.io",
     "tags": [
