@@ -1,13 +1,11 @@
 # Copyright 2020 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
 
-name: Build & Deploy PROD
-
+name: Release
 on:
   push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+    branches:
+      - main
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -16,29 +14,35 @@ env:
   ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER }}
   ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE }}
   ENVIRONMENT: PROD
-  
+
 jobs:
-  build:
-    name: build_deploy_prod
+  release-please:
     runs-on: ubuntu-latest
     permissions:
           id-token: write
           contents: write
 
     steps:
-      # download the source code into the runner
+      - uses: GoogleCloudPlatform/release-please-action@v3.1
+        id: release
+        with:
+          release-type: go
+
       - name: checkout
         uses: actions/checkout@v2
-      
+        if: ${{ steps.release.outputs.release_created }}
+
       - name: Set output
         id: vars
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-
+        if: ${{ steps.release.outputs.release_created }}
+        
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
           aws-region: ${{ env.AWS_REGION }}
+        if: ${{ steps.release.outputs.release_created }}
 
       # gather metadata from git & github actions to reference in docker
       - name: git & github metadata
@@ -46,10 +50,12 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
+        if: ${{ steps.release.outputs.release_created }}
 
       # login in docker repository
       - name: docker login
         uses: aws-actions/amazon-ecr-login@v1
+        if: ${{ steps.release.outputs.release_created }}
 
       # build a docker image
       - name: docker & push image
@@ -61,7 +67,8 @@ jobs:
           tags: |
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.tag }}
-        
+        if: ${{ steps.release.outputs.release_created }}
+
       # deploy to AWS ECS
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -70,4 +77,5 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+        if: ${{ steps.release.outputs.release_created }}
           
