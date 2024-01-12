@@ -10,13 +10,16 @@ help: Makefile
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
+.PHONY: get-lint
 get-lint:
 	if [ ! -f ./bin/golangci-lint ]; then \
-		wget -O - -q https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s latest; \
+		curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.54.2; \
 	fi;
 
+.PHONY: lint
 lint: get-lint
-	./bin/golangci-lint run ./... --timeout 5m0s
+	@echo "  >  \033[32mRunning lint...\033[0m "
+	./bin/golangci-lint run --config=./.golangci.yml
 
 ## license: Adds license header to missing files.
 license:
