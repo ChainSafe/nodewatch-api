@@ -1,6 +1,6 @@
 module eth2-crawler
 
-go 1.17
+go 1.20
 
 require (
 	github.com/99designs/gqlgen v0.17.13

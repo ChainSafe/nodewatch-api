@@ -1,13 +1,13 @@
 # Copyright 2021 ChainSafe Systems
 # SPDX-License-Identifier: LGPL-3.0-only
 
-FROM golang:1.17-alpine AS builder
+FROM golang:1.20-alpine AS builder
 
 RUN apk add build-base
 WORKDIR /code
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
+RUN go mod download && go mod tidy
 
 # build the binary
 ADD . .
