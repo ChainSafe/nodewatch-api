@@ -4,9 +4,11 @@
 name: Build & Deploy PROD
 
 on:
-  push:
-    branches:
-      - 'fix/actions-deployment'
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
