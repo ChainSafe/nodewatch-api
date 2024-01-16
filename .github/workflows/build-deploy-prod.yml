@@ -20,9 +20,10 @@ jobs:
   build:
     name: build_deploy_prod
     runs-on: ubuntu-latest
+
     permissions:
-          id-token: write
-          contents: write
+      contents: read
+      id-token: write
 
     steps:
       # download the source code into the runner
