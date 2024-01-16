@@ -20,9 +20,9 @@ jobs:
           release-type: go
           token: ${{secrets.GITHUB_TOKEN}}
 
-  deploy-services:
-    needs: release
-    uses: ChainSafe/nodewatch-api/.github/workflows/build-deploy-prod.yml@fix/actions-deployment
-    if: ${{ needs.release.outputs.release_created }}
-    with:
-      tag: ${{ needs.release.outputs.tag }}
+  # deploy-services:
+  #   needs: release
+  #   uses: ChainSafe/nodewatch-api/.github/workflows/build-deploy-prod.yml@fix/actions-deployment
+  #   if: ${{ needs.release.outputs.release_created }}
+  #   with:
+  #     tag: ${{ needs.release.outputs.tag }}
