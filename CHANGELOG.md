@@ -1,5 +1,14 @@
 # Changelog
 
+### [1.4.6](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.5...v1.4.6) (2024-01-15)
+
+
+### Bug Fixes
+
+* ecs fixed, release ci fixed ([#236](https://github.com/ChainSafe/nodewatch-api/issues/236)) ([6da48aa](https://github.com/ChainSafe/nodewatch-api/commit/6da48aa4689c495a68cb1a9fd00b0232291a1e97))
+* go-multiaddress updated ([#258](https://github.com/ChainSafe/nodewatch-api/issues/258)) ([6750656](https://github.com/ChainSafe/nodewatch-api/commit/67506566e289bd9c4d962d6549d377fde1709c53))
+* Revert "fix: ecs fixed, release ci fixed" ([#237](https://github.com/ChainSafe/nodewatch-api/issues/237)) ([7caa71f](https://github.com/ChainSafe/nodewatch-api/commit/7caa71fc133327d403dfbe38483f3fe36b43ee79))
+
 ### [1.4.5](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.4...v1.4.5) (2022-11-01)
 
 
