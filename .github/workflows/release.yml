@@ -4,7 +4,7 @@ name: Deploy Release
 on:
   push:
     branches:
-      - 'main'     
+      - main   
 jobs:
   release:
     permissions: write-all
