@@ -1,6 +1,5 @@
 # Copyright 2020 ChainSafe Systems
-# SPDX-License-Identifier: LGPL-3.0-only
-       
+# SPDX-License-Identifier: LGPL-3.0-only      
 name: Deploy Release
 on:
   push:
@@ -24,5 +23,5 @@ jobs:
     needs: release
     uses: ChainSafe/nodewatch-api/.github/workflows/build-deploy-prod.yml@fix/actions-deployment
     if: ${{ needs.release.outputs.release_created }}
-    with:
+    with:   
       tag: ${{ needs.release.outputs.tag }}
