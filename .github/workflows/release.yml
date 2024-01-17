@@ -4,7 +4,7 @@ name: Deploy Release
 on:
   push:
     branches:
-      - 'fix/actions-deployment'     
+      - 'main'     
 jobs:
   release:
     permissions: write-all
@@ -21,7 +21,7 @@ jobs:
 
   deploy-services:
     needs: release
-    uses: ChainSafe/nodewatch-api/.github/workflows/build-deploy-prod.yml@fix/actions-deployment
+    uses: ChainSafe/nodewatch-api/.github/workflows/build-deploy-prod.yml@main
     if: ${{ needs.release.outputs.release_created }}
     with:   
       tag: ${{ needs.release.outputs.tag }}
