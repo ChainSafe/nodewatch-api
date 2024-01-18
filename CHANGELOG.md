@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.4.7](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.6...v1.4.7) (2024-01-18)
+
+
+### Bug Fixes
+
+* actions deployment ([#259](https://github.com/ChainSafe/nodewatch-api/issues/259)) ([2f61383](https://github.com/ChainSafe/nodewatch-api/commit/2f6138311b69efc06fdbc8ea3e94cb20fd2f0fee))
+
 ### [1.4.6](https://github.com/ChainSafe/nodewatch-api/compare/v1.4.5...v1.4.6) (2024-01-15)
 
 
