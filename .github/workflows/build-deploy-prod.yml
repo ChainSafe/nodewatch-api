@@ -4,10 +4,11 @@
 name: Build & Deploy PROD
 
 on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -21,9 +22,10 @@ jobs:
   build:
     name: build_deploy_prod
     runs-on: ubuntu-latest
+
     permissions:
-          id-token: write
-          contents: write
+      contents: read
+      id-token: write
 
     steps:
       # download the source code into the runner
@@ -39,6 +41,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GithubActions
 
       # gather metadata from git & github actions to reference in docker
       - name: git & github metadata
@@ -70,4 +73,3 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
-          

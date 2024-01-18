@@ -1,18 +1,27 @@
 # Copyright 2020 ChainSafe Systems
-# SPDX-License-Identifier: LGPL-3.0-only
-
-name: Release
+# SPDX-License-Identifier: LGPL-3.0-only      
+name: Deploy Release
 on:
   push:
     branches:
-      - main
-
+      - main   
 jobs:
-  release-please:
+  release:
+    permissions: write-all
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: GoogleCloudPlatform/release-please-action@v3.1
-        id: release
+        id: release                                
         with:
           release-type: go
-          
+          token: ${{secrets.GITHUB_TOKEN}}
+
+  deploy-services:
+    needs: release
+    uses: ChainSafe/nodewatch-api/.github/workflows/build-deploy-prod.yml@main
+    if: ${{ needs.release.outputs.release_created }}
+    with:   
+      tag: ${{ needs.release.outputs.tag }}
