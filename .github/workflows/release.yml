@@ -4,7 +4,7 @@ name: Deploy Release
 on:
   push:
     branches:
-      - main   
+      - main  
 jobs:
   release:
     permissions: write-all
@@ -25,3 +25,10 @@ jobs:
     if: ${{ needs.release.outputs.release_created }}
     with:   
       tag: ${{ needs.release.outputs.tag }}
+    secrets:
+      aws_region: ${{ secrets.AWS_REGION }}
+      aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+      ecr_repo: ${{ secrets.AWS_ECR_REPO }}
+      ecs_cluster: ${{ secrets.AWS_ECS_CLUSTER }}
+      ecs_service: ${{ secrets.AWS_ECS_SERVICE }}
+ 

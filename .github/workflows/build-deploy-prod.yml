@@ -9,13 +9,19 @@ on:
       tag:
         required: true
         type: string
+    secrets:
+      aws_region:
+        required: true
+      aws_account_id:
+        required: true
+      ecr_repo:
+        required: true
+      ecs_cluster:
+        required: true
+      ecs_service:
+        required: true
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REPO: ${{ secrets.AWS_ECR_REPO }}
-  ECS_CLUSTER: ${{ secrets.AWS_ECS_CLUSTER }}
-  ECS_SERVICE: ${{ secrets.AWS_ECS_SERVICE }}
   ENVIRONMENT: PROD
   
 jobs:
@@ -37,10 +43,10 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-actions-role
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/github-actions-role
+          aws-region: ${{ secrets.aws_region }}
           role-session-name: GithubActions
 
       # gather metadata from git & github actions to reference in docker
@@ -48,7 +54,7 @@ jobs:
         id: metadata
         uses: docker/metadata-action@v3
         with:
-          images: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.AWS_ECR_REPO }}
+          images: ${{ secrets.aws_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com/${{ secrets.ecr_repo }}
 
       # login in docker repository
       - name: docker login
@@ -62,14 +68,14 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ steps.vars.outputs.tag }}
+            ${{ secrets.aws_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com/${{ secrets.ecr_repo }}:latest
+            ${{ secrets.aws_account_id }}.dkr.ecr.${{ secrets.aws_region }}.amazonaws.com/${{ secrets.ecr_repo }}:${{ steps.vars.outputs.tag }}
         
       # deploy to AWS ECS
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: infra/aws-ecs/task_definition_${{ env.ENVIRONMENT }}.json
-          service: ${{ env.ECS_SERVICE }}
-          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ secrets.ecs_service }}
+          cluster: ${{ secrets.ecs_cluster }}
           wait-for-service-stability: true
